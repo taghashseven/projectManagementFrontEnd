@@ -10,7 +10,8 @@ import {
   selectProjects,
   selectCurrentProject,
   selectProjectLoading,
-  selectProjectError
+  selectProjectError ,
+  addOrUpdateTask
 } from '../features/projects/projectSlice';
 import { selectIsAuthenticated } from '../features/auth/authSlice';
 
@@ -34,7 +35,11 @@ import {
   ArrowLeftIcon,
   PencilIcon,
   TrashIcon,
-  ShareIcon
+  ShareIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 const OverviewIcon = ClipboardIcon;
@@ -44,25 +49,29 @@ const ResourcesIcon = DocumentTextIcon;
 const ChatIcon = UsersIcon;
 const CalendarIcon = CalendarDaysIcon;
 
-const ActivityItem = ({ user, action, time, resource, comment, from, to }) => (
-  <div className="bg-gray-50 rounded-md p-3 hover:bg-gray-100 transition-colors">
-    <p className="text-sm text-gray-800">
-      <span className="font-medium text-gray-900">{user}</span> {action}
-      {resource && <span className="text-blue-600"> {resource}</span>}
-      {comment && <span> — "{comment}"</span>}
-      {from && to && <span> from <span className="italic">{from}</span> to <span className="italic">{to}</span></span>}
-    </p>
-    <p className="text-xs text-gray-500 mt-1">{time}</p>
+const StatItem = ({ label, value, icon, trend, trendColor = 'text-gray-500' }) => (
+  <div className="flex items-center space-x-3 p-3 bg-white rounded-lg shadow-sm">
+    <div className="p-2 bg-gray-100 rounded-full">{icon}</div>
+    <div className="flex-1">
+      <p className="text-sm text-gray-600">{label}</p>
+      <div className="flex items-center justify-between">
+        <p className="text-lg font-semibold text-gray-900">{value}</p>
+        {trend && (
+          <span className={`text-xs ${trendColor} flex items-center`}>
+            {trend}
+          </span>
+        )}
+      </div>
+    </div>
   </div>
 );
 
-const StatItem = ({ label, value, icon }) => (
-  <div className="flex items-center space-x-3 p-3 bg-white rounded-lg shadow-sm">
-    <div className="p-2 bg-gray-100 rounded-full">{icon}</div>
-    <div>
-      <p className="text-sm text-gray-600">{label}</p>
-      <p className="text-lg font-semibold text-gray-900">{value}</p>
-    </div>
+const ProgressBar = ({ percentage }) => (
+  <div className="w-full bg-gray-200 rounded-full h-2.5">
+    <div 
+      className="bg-blue-600 h-2.5 rounded-full" 
+      style={{ width: `${percentage}%` }}
+    ></div>
   </div>
 );
 
@@ -132,6 +141,19 @@ export default function ProjectPage() {
       }
     }
   };
+
+  // Calculate project completion percentage
+  const completionPercentage = project?.tasks?.length > 0 
+    ? Math.round((project.tasks.filter(t => t.status === 'completed').length / project.tasks.length) * 100)
+    : 0;
+
+  // Calculate days remaining
+  const daysRemaining = project?.endDate 
+    ? Math.ceil((new Date(project.endDate) - new Date()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  // Calculate days active
+  const daysActive = project?.startDate  ? Math.floor((new Date() - new Date(project.startDate))) / (1000 * 60 * 60 * 24) : 0;
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <OverviewIcon className="w-5 h-5" /> },
@@ -296,28 +318,80 @@ export default function ProjectPage() {
                       </p>
                     </div>
                     
+                    {/* Project Progress Section */}
                     <div>
-                      <h3 className="text-lg font-medium mb-3">Recent Activity</h3>
-                      <div className="space-y-3">
-                        <ActivityItem 
-                          user="John Doe" 
-                          action="uploaded a new resource" 
-                          resource="Project Brief.pdf" 
-                          time="2 hours ago" 
-                        />
-                        <ActivityItem 
-                          user="Jane Smith" 
-                          action="commented" 
-                          comment="We need to adjust the timeline" 
-                          time="1 day ago" 
-                        />
-                        <ActivityItem 
-                          user="Mike Johnson" 
-                          action="changed status" 
-                          from="In Progress" 
-                          to="On Hold" 
-                          time="2 days ago" 
-                        />
+                      <h3 className="text-lg font-medium mb-3">Project Progress</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm font-medium text-gray-700">
+                              Overall Completion
+                            </span>
+                            <span className="text-sm font-medium text-gray-700">
+                              {completionPercentage}%
+                            </span>
+                          </div>
+                          <ProgressBar percentage={completionPercentage} />
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">Timeline</h4>
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-xs text-gray-500">Start Date</span>
+                                <span className="text-xs font-medium">
+                                  {new Date(project.startDate).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-xs text-gray-500">End Date</span>
+                                <span className="text-xs font-medium">
+                                  {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'Not set'}
+                                </span>
+                              </div>
+                              {daysRemaining !== null && (
+                                <div className="flex justify-between">
+                                  <span className="text-xs text-gray-500">Days Remaining</span>
+                                  <span className={`text-xs font-medium ${
+                                    daysRemaining < 0 ? 'text-red-600' : 
+                                    daysRemaining < 7 ? 'text-yellow-600' : 'text-green-600'
+                                  }`}>
+                                    {daysRemaining > 0 ? daysRemaining : 'Overdue'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">Task Status</h4>
+                            <div className="space-y-2">
+                              {project.tasks?.length > 0 ? (
+                                <>
+                                  <div className="flex justify-between">
+                                    <span className="text-xs text-gray-500">Total Tasks</span>
+                                    <span className="text-xs font-medium">{project.tasks.length}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-xs text-gray-500">Completed</span>
+                                    <span className="text-xs font-medium text-green-600">
+                                      {project.tasks.filter(t => t.status === 'completed').length}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-xs text-gray-500">In Progress</span>
+                                    <span className="text-xs font-medium text-blue-600">
+                                      {project.tasks.filter(t => t.status === 'in-progress').length}
+                                    </span>
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="text-xs text-gray-500">No tasks yet</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -343,8 +417,18 @@ export default function ProjectPage() {
                       />
                       <StatItem 
                         label="Days Active" 
-                        value={Math.floor((new Date() - new Date(project.startDate)) / (1000 * 60 * 60 * 24))} 
+                        value={Math.floor(daysActive)} 
                         icon={<CalendarDaysIcon className="w-5 h-5" />} 
+                      />
+                      <StatItem 
+                        label="High Priority Tasks" 
+                        value={project.tasks?.filter(t => t.priority === 'high').length || 0} 
+                        icon={<ExclamationTriangleIcon className="w-5 h-5 text-red-500" />} 
+                      />
+                      <StatItem 
+                        label="Completion Rate" 
+                        value={`${completionPercentage}%`} 
+                        icon={<ChartBarIcon className="w-5 h-5 text-blue-500" />} 
                       />
                     </div>
                   </div>
@@ -359,7 +443,7 @@ export default function ProjectPage() {
               )}
               
               {activeTab === 'tasks' && (
-                <KanbanBoard projectId={project._id} />
+                <KanbanBoard projectId={project._id} tasks={project.tasks} />
               )}
               
               {activeTab === 'resources' && (

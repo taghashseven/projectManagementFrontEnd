@@ -15,7 +15,8 @@ function App() {
             {/* login page  */}
             {/* <Route path='/' element={LoginPage} /> */}
 
-            <Route path="/" element={<LoginPage />} />
+            <Route path="/" element={<LoginPage />} /> 
+            <Route path="/login" element={<LoginPage />} /> 
 
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/projects/:projectId" element={<ProjectPage />} />

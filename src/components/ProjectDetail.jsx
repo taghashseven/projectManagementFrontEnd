@@ -68,6 +68,7 @@ export default function ProjectDetail({ project, onUpdateProject }) {
           </div>
         )}
 
+
         {activeTab === 'team' && <TeamMembers team={project.team} />}
         {activeTab === 'resources' && <ResourcesSection resources={project.resources} />}
         {activeTab === 'chat' && <ProjectChat projectId={project.id} />}
