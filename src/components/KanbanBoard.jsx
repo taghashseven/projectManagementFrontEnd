@@ -61,7 +61,7 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
     const taskToSave = tasks.find(task => task._id === taskId);
     if (!taskToSave?.title) return;
     console.log(taskToSave, "task to save");
-    dispatch(addOrUpdateTask(tasks))
+    dispatch(addOrUpdateTask( {projectId : projectId, taskData: taskToSave}))
     setEditingTaskId(null);
   };
 

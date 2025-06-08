@@ -85,9 +85,9 @@ export const deleteProject = createAsyncThunk(
 export const addOrUpdateTask = createAsyncThunk(
   "projects/addOrUpdateTask",
   async ({ projectId, taskData }, thunkAPI) => {
-    console.log(taskData  , "add or update Task -----------------");
+    console.log(taskData, "add or update Task -----------------");
     try {
-      console.log(projectId  , "add or update Task ");
+      console.log(projectId, "add or update Task ");
       const data = await apiFetch(
         `http://localhost:3000/projects/${projectId}/tasks`,
         {
@@ -121,6 +121,49 @@ export const deleteTask = createAsyncThunk(
     }
   }
 );
+
+// Add these async thunks to your existing thunks
+export const addResource = createAsyncThunk(
+  "projects/addResource",
+  async ({ projectId, resourceData }, thunkAPI) => {
+    console.log(resourceData, "add or update Task -----------------");  
+    try {
+      const data = await apiFetch(
+        `http://localhost:3000/projects/${projectId}/resources`,
+        {
+          method: "POST",
+          body: JSON.stringify(resourceData),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log(data , "add or update Task ");
+      return { projectId, resource: data };
+    } catch (err) {
+      return thunkAPI.rejectWithValue(err.message);
+    }
+  }
+);
+
+export const deleteResource = createAsyncThunk(
+  "projects/deleteResource",
+  async ({ projectId, resourceId }, thunkAPI) => {
+    try {
+      await apiFetch(
+        `http://localhost:3000/projects/${projectId}/resources/${resourceId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      return { projectId, resourceId };
+    } catch (err) {
+      return thunkAPI.rejectWithValue(err.message);
+    }
+  }
+);
+
+// add or update project
 
 const initialState = {
   items: [],
@@ -272,6 +315,61 @@ const projectSlice = createSlice({
         state.loading = false;
       })
       .addCase(deleteTask.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Add Resource
+      .addCase(addResource.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addResource.fulfilled, (state, action) => {
+        const { projectId, resource } = action.payload;
+
+        // Update in items array
+        const projectIndex = state.items.findIndex((p) => p._id === projectId);
+        if (projectIndex !== -1) {
+          state.items[projectIndex].resources.push(resource);
+        }
+
+        // Update in currentProject if it's the same project
+        if (state.currentProject?._id === projectId) {
+          state.currentProject.resources.push(resource);
+        }
+
+        state.loading = false;
+      })
+      .addCase(addResource.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Delete Resource
+      .addCase(deleteResource.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteResource.fulfilled, (state, action) => {
+        const { projectId, resourceId } = action.payload;
+
+        // Update in items array
+        const projectIndex = state.items.findIndex((p) => p._id === projectId);
+        if (projectIndex !== -1) {
+          state.items[projectIndex].resources = state.items[
+            projectIndex
+          ].resources.filter((r) => r._id !== resourceId);
+        }
+
+        // Update in currentProject if it's the same project
+        if (state.currentProject?._id === projectId) {
+          state.currentProject.resources =
+            state.currentProject.resources.filter((r) => r._id !== resourceId);
+        }
+
+        state.loading = false;
+      })
+      .addCase(deleteResource.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

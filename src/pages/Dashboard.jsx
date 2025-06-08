@@ -2,7 +2,12 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ProjectCreateForm from "../components/ProjectCreateForm";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchProjects, createProject , fetchAllUsers } from "../features/projects/projectSlice";
+import {
+  fetchProjects,
+  createProject,
+  fetchAllUsers,
+} from "../features/projects/projectSlice";
+import User from "../components/UserCard";
 
 
 export default function Dashboard() {
@@ -16,9 +21,7 @@ export default function Dashboard() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState("cards"); // 'cards' or 'table'
-
-
+  const [viewMode, setViewMode] = useState("table"); // 'cards' or 'table'
 
   useEffect(() => {
     dispatch(fetchProjects());
@@ -73,7 +76,7 @@ export default function Dashboard() {
           <div className="mt-4 md:mt-0 flex items-center space-x-4">
             <div className="flex bg-white rounded-lg shadow-sm p-1">
               <button
-                onClic ={() => setViewMode("cards")}
+                onClick={() => setViewMode("cards")}
                 className={`px-3 py-1 text-sm font-medium rounded-md ${
                   viewMode === "cards"
                     ? "bg-blue-100 text-blue-800"
@@ -99,46 +102,8 @@ export default function Dashboard() {
             >
               Create New Project
             </button>
+            <User />
           </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          {[
-            { id: "all", label: "Total Projects", icon: <ProjectIcon /> },
-            {
-              id: "not-started",
-              label: "Not Started",
-              icon: <ClockIcon />,
-            },
-            {
-              id: "in-progress",
-              label: "In Progress",
-              icon: <ProgressIcon />,
-            },
-            { id: "on-hold", label: "On Hold", icon: <PauseIcon /> },
-            { id: "completed", label: "Completed", icon: <CheckIcon /> },
-          ].map((stat) => (
-            <div
-              key={stat.id}
-              onClick={() => setActiveFilter(stat.id)}
-              className={`bg-white p-4 rounded-lg shadow-sm cursor-pointer flex items-center ${
-                activeFilter === stat.id ? "ring-2 ring-blue-500" : ""
-              }`}
-            >
-              <div className="p-3 rounded-full bg-blue-100 text-blue-800 mr-4">
-                {stat.icon}
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">
-                  {stat.label}
-                </h3>
-                <p className="text-2xl font-semibold mt-1">
-                  {projectCounts[stat.id]}
-                </p>
-              </div>
-            </div>
-          ))}
         </div>
 
         {/* Filters and Search */}
@@ -161,7 +126,14 @@ export default function Dashboard() {
                       : "text-gray-500 hover:bg-gray-100"
                   }`}
                 >
-                  {filter === "all" ? "All Projects" : filter.replace("-", " ")}
+                  <div className="flex items-center gap-2">
+                    <p className="text-gray-500">{projectCounts[filter]}</p>
+
+                    {filter === "all"
+                      ? "All Projects"
+                      : filter.replace("-", " ")}
+                    {/* {projectCounts[filter]} */}
+                  </div>
                 </button>
               ))}
             </div>
@@ -275,7 +247,8 @@ function CardView({ projects, statusColors }) {
                     {project.status.replace("-", " ")}
                   </span>
                   <p className="ml-2 text-sm text-gray-500">
-                    Started on {new Date(project.startDate).toLocaleDateString()}
+                    Started on{" "}
+                    {new Date(project.startDate).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="ml-2 flex-shrink-0 flex">
@@ -309,7 +282,9 @@ function CardView({ projects, statusColors }) {
                   <DocumentTextIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
                   <p>
                     {project?.resources?.length}{" "}
-                    {project?.resources?.length === 1 ? "resource" : "resources"}
+                    {project?.resources?.length === 1
+                      ? "resource"
+                      : "resources"}
                   </p>
                 </div>
                 <div className="flex items-center text-sm text-gray-500">
@@ -373,10 +348,7 @@ function TableView({ projects, statusColors }) {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {projects.map((project) => (
-              <tr
-                key={project._id}
-                className="hover:bg-gray-50 cursor-pointer"
-              >
+              <tr key={project._id} className="hover:bg-gray-50 cursor-pointer">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <Link
                     to={`/projects/${project._id}`}
@@ -431,6 +403,9 @@ function TableView({ projects, statusColors }) {
   );
 }
 
+function GraphView() {
+
+}
 // Reuse your existing icon components from the original file
 function ProjectIcon() {
   return (

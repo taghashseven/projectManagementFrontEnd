@@ -448,8 +448,7 @@ export default function ProjectPage() {
               
               {activeTab === 'resources' && (
                 <ResourcesSection 
-                  resources={project.resources || []} 
-                  projectId={project._id} 
+                  initialResources={project.resources || []} 
                 />
               )}
               

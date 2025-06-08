@@ -1,6 +1,12 @@
 import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { addResource} from '../features/projects/projectSlice';
+import { useParams } from 'react-router-dom';
+
 
 export default function ResourcesSection({ initialResources, currentUser }) {
+  const { projectId } = useParams();
+  const dispatch = useDispatch();
   const [resources, setResources] = useState(initialResources || []);
   const [isAdding, setIsAdding] = useState(false);
   const [editingResource, setEditingResource] = useState(null);
@@ -35,10 +41,14 @@ export default function ResourcesSection({ initialResources, currentUser }) {
       ...newResource,
       _id: Date.now().toString(), // Temporary ID until saved to database
       createdAt: new Date().toISOString(),
-      createdBy: currentUser._id // Using _id to match Mongoose schema
+      createdBy: currentUser?._id // Using _id to match Mongoose schema
     };
     
     setResources([...resources, resource]);
+    dispatch(addResource({
+      projectId: projectId , // Replace with actual project ID
+      resourceData: resource
+    }));
     setIsAdding(false);
     setNewResource({
       name: '',

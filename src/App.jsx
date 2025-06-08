@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import ProjectPage from "./pages/ProjectPage";
 import LoginPage from "./pages/LoginPage";
 import { Provider } from "react-redux";
+import UserDashboard from "./pages/UserDashboard";
 
 function App() {
   return (
@@ -17,6 +18,8 @@ function App() {
 
             <Route path="/" element={<LoginPage />} /> 
             <Route path="/login" element={<LoginPage />} /> 
+
+            <Route path="/userdashboard" element={<UserDashboard />} />
 
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/projects/:projectId" element={<ProjectPage />} />
