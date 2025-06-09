@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import { 
   addTeamMember, 
   removeTeamMember,
   fetchAllUsers 
 } from '../features/projects/projectSlice';
 
-export default function TeamMembers({ projectId, team }) {
+export default function TeamMembers({ team }) {
+  const { projectId} = useParams();
   const dispatch = useDispatch();
   const allUsers = useSelector((state) => state.projects.allUsers);
   const [isAdding, setIsAdding] = useState(false);
@@ -63,6 +65,9 @@ export default function TeamMembers({ projectId, team }) {
         },
       })
     );
+
+    // add team 
+    team.push(selectedUser);
 
     handleCancel();
   };
