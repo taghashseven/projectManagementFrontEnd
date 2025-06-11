@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ProjectCreateForm from "../components/ProjectCreateForm";
 import { useSelector, useDispatch } from "react-redux";
+import { useDarkMode } from '../context/DarkModeContext';
+import DarkModeButton from '../components/DarkMode';
+
 import {
   fetchProjects,
   createProject,
   fetchAllUsers,
 } from "../features/projects/projectSlice";
 import User from "../components/UserCard";
-
 
 export default function Dashboard() {
   const dispatch = useDispatch();
@@ -23,6 +25,10 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState("table"); // 'cards' or 'table'
 
+  // Check for user's preferred color scheme
+  const {darkMode} = useDarkMode()
+
+
   useEffect(() => {
     dispatch(fetchProjects());
   }, [dispatch]);
@@ -35,6 +41,7 @@ export default function Dashboard() {
       console.error("Failed to create project:", err);
     }
   };
+
 
   const filteredProjects = projects.filter((project) => {
     const matchesFilter =
@@ -54,33 +61,40 @@ export default function Dashboard() {
   };
 
   const statusColors = {
-    "not-started": "bg-gray-100 text-gray-800",
-    "in-progress": "bg-yellow-100 text-yellow-800",
-    "on-hold": "bg-red-100 text-red-800",
-    completed: "bg-green-100 text-green-800",
+    "not-started": darkMode ? "bg-gray-700 text-gray-200" : "bg-gray-100 text-gray-800",
+    "in-progress": darkMode ? "bg-yellow-800 text-yellow-100" : "bg-yellow-100 text-yellow-800",
+    "on-hold": darkMode ? "bg-red-800 text-red-100" : "bg-red-100 text-red-800",
+    completed: darkMode ? "bg-green-800 text-green-100" : "bg-green-100 text-green-800",
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} p-6 transition-colors duration-200`}>
+      {/* Dark mode toggle button */}
+      <DarkModeButton />
+
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
               Project Dashboard
             </h1>
-            <p className="text-gray-600 mt-2">
+            <p className={`mt-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               Manage all your projects in one place
             </p>
           </div>
           <div className="mt-4 md:mt-0 flex items-center space-x-4">
-            <div className="flex bg-white rounded-lg shadow-sm p-1">
+            <div className={`flex rounded-lg shadow-sm p-1 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <button
                 onClick={() => setViewMode("cards")}
                 className={`px-3 py-1 text-sm font-medium rounded-md ${
                   viewMode === "cards"
-                    ? "bg-blue-100 text-blue-800"
-                    : "text-gray-500 hover:bg-gray-100"
+                    ? darkMode 
+                      ? 'bg-blue-900 text-blue-100' 
+                      : 'bg-blue-100 text-blue-800'
+                    : darkMode
+                      ? 'text-gray-300 hover:bg-gray-700'
+                      : 'text-gray-500 hover:bg-gray-100'
                 }`}
               >
                 Card View
@@ -89,8 +103,12 @@ export default function Dashboard() {
                 onClick={() => setViewMode("table")}
                 className={`px-3 py-1 text-sm font-medium rounded-md ${
                   viewMode === "table"
-                    ? "bg-blue-100 text-blue-800"
-                    : "text-gray-500 hover:bg-gray-100"
+                    ? darkMode 
+                      ? 'bg-blue-900 text-blue-100' 
+                      : 'bg-blue-100 text-blue-800'
+                    : darkMode
+                      ? 'text-gray-300 hover:bg-gray-700'
+                      : 'text-gray-500 hover:bg-gray-100'
                 }`}
               >
                 Table View
@@ -102,12 +120,12 @@ export default function Dashboard() {
             >
               Create New Project
             </button>
-            <User />
+            <User darkMode={darkMode} />
           </div>
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className={`rounded-lg shadow-sm p-4 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex space-x-1 overflow-x-auto pb-2 md:pb-0">
               {[
@@ -122,31 +140,33 @@ export default function Dashboard() {
                   onClick={() => setActiveFilter(filter)}
                   className={`px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap ${
                     activeFilter === filter
-                      ? "bg-blue-100 text-blue-800"
-                      : "text-gray-500 hover:bg-gray-100"
+                      ? darkMode 
+                        ? 'bg-blue-900 text-blue-100' 
+                        : 'bg-blue-100 text-blue-800'
+                      : darkMode
+                        ? 'text-gray-300 hover:bg-gray-700'
+                        : 'text-gray-500 hover:bg-gray-100'
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <p className="text-gray-500">{projectCounts[filter]}</p>
-
-                    {filter === "all"
-                      ? "All Projects"
-                      : filter.replace("-", " ")}
-                    {/* {projectCounts[filter]} */}
+                    <p className={darkMode ? 'text-gray-400' : 'text-gray-500'}>{projectCounts[filter]}</p>
+                    {filter === "all" ? "All Projects" : filter.replace("-", " ")}
                   </div>
                 </button>
               ))}
             </div>
             <div className="relative w-full md:w-64">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon className="h-5 w-5 text-gray-400" />
+                <SearchIcon className={`h-5 w-5 ${darkMode ? 'text-gray-400' : 'text-gray-400'}`} />
               </div>
               <input
                 type="text"
                 placeholder="Search projects..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                  darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
+                }`}
               />
             </div>
           </div>
@@ -154,14 +174,14 @@ export default function Dashboard() {
 
         {/* Projects Display */}
         {filteredProjects.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-            <div className="mx-auto h-12 w-12 text-gray-400">
+          <div className={`rounded-lg shadow-sm p-8 text-center ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className={`mx-auto h-12 w-12 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
               <FolderIcon />
             </div>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
+            <h3 className={`mt-2 text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
               No projects found
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className={`mt-1 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               {searchQuery
                 ? "Try adjusting your search or filter to find what you're looking for."
                 : "Get started by creating a new project."}
@@ -181,9 +201,9 @@ export default function Dashboard() {
             </div>
           </div>
         ) : viewMode === "cards" ? (
-          <CardView projects={filteredProjects} statusColors={statusColors} />
+          <CardView projects={filteredProjects} statusColors={statusColors} darkMode={darkMode} />
         ) : (
-          <TableView projects={filteredProjects} statusColors={statusColors} />
+          <TableView projects={filteredProjects} statusColors={statusColors} darkMode={darkMode} />
         )}
 
         {/* Create Project Modal */}
@@ -193,17 +213,19 @@ export default function Dashboard() {
             onClick={() => setShowCreateForm(false)}
           >
             <div
-              className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              className={`rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto ${
+                darkMode ? 'bg-gray-800' : 'bg-white'
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-gray-900">
+                  <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                     Create New Project
                   </h2>
                   <button
                     onClick={() => setShowCreateForm(false)}
-                    className="text-gray-400 hover:text-gray-500"
+                    className={darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-500'}
                     aria-label="Close modal"
                   >
                     <XMarkIcon className="h-6 w-6" />
@@ -215,6 +237,7 @@ export default function Dashboard() {
                     setShowCreateForm(false);
                   }}
                   onCancel={() => setShowCreateForm(false)}
+                  darkMode={darkMode}
                 />
               </div>
             </div>
@@ -226,15 +249,15 @@ export default function Dashboard() {
 }
 
 // Card View Component
-function CardView({ projects, statusColors }) {
+function CardView({ projects, statusColors, darkMode }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="divide-y divide-gray-200">
+    <div className={`rounded-lg shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <div className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
         {projects.map((project) => (
           <Link
             key={project._id}
             to={`/projects/${project._id}`}
-            className="block hover:bg-gray-50 transition duration-150"
+            className={`block transition duration-150 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
           >
             <div className="px-4 py-4 sm:px-6">
               <div className="flex items-center justify-between">
@@ -246,9 +269,8 @@ function CardView({ projects, statusColors }) {
                   >
                     {project.status.replace("-", " ")}
                   </span>
-                  <p className="ml-2 text-sm text-gray-500">
-                    Started on{" "}
-                    {new Date(project.startDate).toLocaleDateString()}
+                  <p className={`ml-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Started on {new Date(project.startDate).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="ml-2 flex-shrink-0 flex">
@@ -256,13 +278,19 @@ function CardView({ projects, statusColors }) {
                     {project.team.slice(0, 3).map((member) => (
                       <div
                         key={member._id}
-                        className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-medium"
+                        className={`inline-block h-6 w-6 rounded-full ring-2 ${
+                          darkMode ? 'ring-gray-800' : 'ring-white'
+                        } bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-medium`}
                       >
                         {member.name.charAt(0)}
                       </div>
                     ))}
                     {project.team.length > 3 && (
-                      <div className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-gray-200 text-gray-600 flex items-center justify-center text-xs font-medium">
+                      <div
+                        className={`inline-block h-6 w-6 rounded-full ring-2 ${
+                          darkMode ? 'ring-gray-800' : 'ring-white'
+                        } ${darkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-600'} flex items-center justify-center text-xs font-medium`}
+                      >
                         +{project.team.length - 3}
                       </div>
                     )}
@@ -270,25 +298,23 @@ function CardView({ projects, statusColors }) {
                 </div>
               </div>
               <div className="mt-2">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className={`text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                   {project.name}
                 </h3>
-                <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                <p className={`mt-1 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'} line-clamp-2`}>
                   {project.description}
                 </p>
               </div>
               <div className="mt-3 flex justify-between items-center">
-                <div className="flex items-center text-sm text-gray-500">
-                  <DocumentTextIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
+                <div className={`flex items-center text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <DocumentTextIcon className={`flex-shrink-0 mr-1.5 h-5 w-5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                   <p>
                     {project?.resources?.length}{" "}
-                    {project?.resources?.length === 1
-                      ? "resource"
-                      : "resources"}
+                    {project?.resources?.length === 1 ? "resource" : "resources"}
                   </p>
                 </div>
-                <div className="flex items-center text-sm text-gray-500">
-                  <ChatBubbleLeftIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
+                <div className={`flex items-center text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <ChatBubbleLeftIcon className={`flex-shrink-0 mr-1.5 h-5 w-5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                   <p>View discussion</p>
                 </div>
               </div>
@@ -301,64 +327,79 @@ function CardView({ projects, statusColors }) {
 }
 
 // Table View Component
-function TableView({ projects, statusColors }) {
+function TableView({ projects, statusColors, darkMode }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div className={`rounded-lg shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+          <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
             <tr>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                  darkMode ? 'text-gray-300' : 'text-gray-500'
+                }`}
               >
                 Project Name
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                  darkMode ? 'text-gray-300' : 'text-gray-500'
+                }`}
               >
                 Description
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                  darkMode ? 'text-gray-300' : 'text-gray-500'
+                }`}
               >
                 Status
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                  darkMode ? 'text-gray-300' : 'text-gray-500'
+                }`}
               >
                 Start Date
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                  darkMode ? 'text-gray-300' : 'text-gray-500'
+                }`}
               >
                 Team
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                  darkMode ? 'text-gray-300' : 'text-gray-500'
+                }`}
               >
                 Resources
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className={`divide-y ${darkMode ? 'divide-gray-700 bg-gray-800' : 'divide-gray-200 bg-white'}`}>
             {projects.map((project) => (
-              <tr key={project._id} className="hover:bg-gray-50 cursor-pointer">
+              <tr 
+                key={project._id} 
+                className={darkMode ? 'hover:bg-gray-700 cursor-pointer' : 'hover:bg-gray-50 cursor-pointer'}
+              >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <Link
                     to={`/projects/${project._id}`}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                    className={`text-sm font-medium ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
                   >
                     {project.name}
                   </Link>
                 </td>
                 <td className="px-6 py-4">
-                  <p className="text-sm text-gray-500 line-clamp-2 max-w-xs">
+                  <p className={`text-sm line-clamp-2 max-w-xs ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                     {project.description}
                   </p>
                 </td>
@@ -371,7 +412,7 @@ function TableView({ projects, statusColors }) {
                     {project.status.replace("-", " ")}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   {new Date(project.startDate).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -379,19 +420,25 @@ function TableView({ projects, statusColors }) {
                     {project.team.slice(0, 3).map((member) => (
                       <div
                         key={member._id}
-                        className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-medium"
+                        className={`inline-block h-6 w-6 rounded-full ring-2 ${
+                          darkMode ? 'ring-gray-800' : 'ring-white'
+                        } bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-medium`}
                       >
                         {member.name.charAt(0)}
                       </div>
                     ))}
                     {project.team.length > 3 && (
-                      <div className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-gray-200 text-gray-600 flex items-center justify-center text-xs font-medium">
+                      <div
+                        className={`inline-block h-6 w-6 rounded-full ring-2 ${
+                          darkMode ? 'ring-gray-800' : 'ring-white'
+                        } ${darkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-600'} flex items-center justify-center text-xs font-medium`}
+                      >
                         +{project.team.length - 3}
                       </div>
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   {project?.resources?.length || 0}
                 </td>
               </tr>
@@ -403,10 +450,7 @@ function TableView({ projects, statusColors }) {
   );
 }
 
-function GraphView() {
-
-}
-// Reuse your existing icon components from the original file
+// Keep all your existing icon components as they were
 function ProjectIcon() {
   return (
     <svg

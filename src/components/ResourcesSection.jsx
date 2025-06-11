@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { addResource} from '../features/projects/projectSlice';
+import { addResource, deleteResource} from '../features/projects/projectSlice';
 import { useParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectCurrentProject } from '../features/projects/projectSlice';
 
-
-export default function ResourcesSection({ initialResources, currentUser }) {
+export default function ResourcesSection({  currentUser }) {
   const { projectId } = useParams();
   const dispatch = useDispatch();
-  const [resources, setResources] = useState(initialResources || []);
+  const currentProject = useSelector(selectCurrentProject)
   const [isAdding, setIsAdding] = useState(false);
   const [editingResource, setEditingResource] = useState(null);
   const [newResource, setNewResource] = useState({
@@ -44,11 +45,11 @@ export default function ResourcesSection({ initialResources, currentUser }) {
       createdBy: currentUser?._id // Using _id to match Mongoose schema
     };
     
-    setResources([...resources, resource]);
     dispatch(addResource({
-      projectId: projectId , // Replace with actual project ID
+      projectId: projectId ,
       resourceData: resource
     }));
+
     setIsAdding(false);
     setNewResource({
       name: '',
@@ -61,14 +62,15 @@ export default function ResourcesSection({ initialResources, currentUser }) {
   const handleSaveEdit = () => {
     if (!editingResource.name || !editingResource.url) return;
     
-    setResources(resources.map(r => 
-      r._id === editingResource._id ? editingResource : r
-    ));
+  
     setEditingResource(null);
   };
 
   const handleDelete = (id) => {
-    setResources(resources.filter(r => r._id !== id));
+    dispatch(deleteResource({
+      projectId : projectId , 
+      resourceId : id
+    }))
   };
 
   const renderResourceForm = () => (
@@ -231,7 +233,7 @@ export default function ResourcesSection({ initialResources, currentUser }) {
     <div className="space-y-4">
       {isAdding && renderResourceForm()}
       
-      {resources.map(resource => (
+      {currentProject?.resource.map(resource => (
         resource._id === editingResource?._id ? (
           renderEditForm(resource)
         ) : (
@@ -310,7 +312,7 @@ export default function ResourcesSection({ initialResources, currentUser }) {
               </tr>
             )}
             
-            {resources.map(resource => (
+            {currentProject?.resources.map(resource => (
               resource._id === editingResource?._id ? (
                 <tr key={resource._id}>
                   <td colSpan="5" className="px-6 py-4">
@@ -410,7 +412,7 @@ export default function ResourcesSection({ initialResources, currentUser }) {
         </div>
       </div>
 
-      {resources.length === 0 && !isAdding ? (
+      {currentProject.resources.length === 0 && !isAdding ? (
         <div className="bg-white rounded-lg shadow-sm p-8 text-center">
           <div className="mx-auto h-12 w-12 text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

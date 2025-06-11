@@ -7,10 +7,11 @@ import { Provider } from "react-redux";
 import UserDashboard from "./pages/UserDashboard";
 import PrivateRoute from "./PrivateRoute";
 import SettingsPage from "./pages/SettingsPage";
-
+import { DarkModeProvider } from "./context/DarkModeContext";
 function App() {
   return (
-    <Provider store={store}>
+    <DarkModeProvider>
+       <Provider store={store}>
       <Router>
         <div className="min-h-screen bg-gray-50">
           <Routes>
@@ -50,11 +51,12 @@ function App() {
                   <SettingsPage />
                 </PrivateRoute>
               }
-            />
+            />v
           </Routes>
         </div>
       </Router>
     </Provider>
+  </DarkModeProvider>
   );
 }
 

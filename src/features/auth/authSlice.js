@@ -86,8 +86,6 @@ export const fetchUserProfile = createAsyncThunk(
 const initialState = {
   user: getUserFromToken(localStorage.getItem('token')),
   token: localStorage.getItem('token') || null,
-  loading: false,
-  error: null,
   isAuthenticated: !!localStorage.getItem('token'),
 };
 
@@ -163,6 +161,7 @@ const authSlice = createSlice({
       });
   },
 });
+
 
 // Selectors
 export const selectCurrentUser = (state) => state.auth.user;

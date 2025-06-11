@@ -33,6 +33,19 @@ export const createProject = createAsyncThunk(
   }
 );
 
+//get project by id
+export const fetchProject = createAsyncThunk(
+  "projects/fetchProject",
+  async (projectId, thunkAPI) => {
+    try {
+      const data = await apiFetch(`http://localhost:3000/projects/${projectId}`);
+      return data;
+    } catch (err) {
+      return thunkAPI.rejectWithValue(err.message);
+    }
+  }
+);
+
 // get team members
 export const fetchAllUsers = createAsyncThunk(
   "projects/fetchAllUsers",
@@ -126,7 +139,6 @@ export const deleteTask = createAsyncThunk(
 export const addResource = createAsyncThunk(
   "projects/addResource",
   async ({ projectId, resourceData }, thunkAPI) => {
-    console.log(resourceData, "add or update Task -----------------");  
     try {
       const data = await apiFetch(
         `http://localhost:3000/projects/${projectId}/resources`,
@@ -138,8 +150,7 @@ export const addResource = createAsyncThunk(
           },
         }
       );
-      console.log(data , "add or update Task ");
-      return { projectId, resource: data };
+      return { projectId, project: data };
     } catch (err) {
       return thunkAPI.rejectWithValue(err.message);
     }
@@ -150,13 +161,73 @@ export const deleteResource = createAsyncThunk(
   "projects/deleteResource",
   async ({ projectId, resourceId }, thunkAPI) => {
     try {
-      await apiFetch(
+      const project = await apiFetch(
         `http://localhost:3000/projects/${projectId}/resources/${resourceId}`,
         {
           method: "DELETE",
         }
       );
-      return { projectId, resourceId };
+      return { projectId, project };
+    } catch (err) {
+      return thunkAPI.rejectWithValue(err.message);
+    }
+  }
+);
+
+export const addTeamMember = createAsyncThunk(
+  "projects/addTeamMember",
+  async ({ projectId, memberData }, thunkAPI) => {
+    try {
+      const data = await apiFetch(
+        `http://localhost:3000/projects/${projectId}/team`,
+        {
+          method: "POST",
+          body: JSON.stringify(memberData),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return { projectId, project: data };
+    } catch (err) {
+      return thunkAPI.rejectWithValue(err.message);
+    }
+  }
+);
+
+// export const updateTeamMember = createAsyncThunk(
+//   "projects/updateTeamMember",
+//   async ({ projectId, memberId, memberData }, thunkAPI) => {
+//     try {
+//       const data = await apiFetch(
+//         `http://localhost:3000/projects/${projectId}/team/${memberId}`,
+//         {
+//           method: "PUT",
+//           body: JSON.stringify(memberData),
+//           headers: {
+//             "Content-Type": "application/json",
+//           },
+//         }
+//       );
+//       return { projectId, updatedProject: data };
+//     } catch (err) {
+//       return thunkAPI.rejectWithValue(err.message);
+//     }
+//   }
+// );
+
+export const removeTeamMember = createAsyncThunk(
+  "projects/removeTeamMember",
+  async ({ projectId, memberId }, thunkAPI) => {
+    try {
+      const data = await apiFetch(
+        `http://localhost:3000/projects/${projectId}/team/${memberId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      console.log(data);
+      return { projectId, updatedProject: data };
     } catch (err) {
       return thunkAPI.rejectWithValue(err.message);
     }
@@ -176,6 +247,7 @@ const initialState = {
 const projectSlice = createSlice({
   name: "projects",
   initialState,
+
   reducers: {
     setCurrentProject: (state, action) => {
       state.currentProject = action.payload;
@@ -325,17 +397,14 @@ const projectSlice = createSlice({
         state.error = null;
       })
       .addCase(addResource.fulfilled, (state, action) => {
-        const { projectId, resource } = action.payload;
+        const { projectId, project } = action.payload;
 
         // Update in items array
-        const projectIndex = state.items.findIndex((p) => p._id === projectId);
-        if (projectIndex !== -1) {
-          state.items[projectIndex].resources.push(resource);
-        }
+       
 
         // Update in currentProject if it's the same project
         if (state.currentProject?._id === projectId) {
-          state.currentProject.resources.push(resource);
+          state.currentProject = project
         }
 
         state.loading = false;
@@ -351,89 +420,51 @@ const projectSlice = createSlice({
         state.error = null;
       })
       .addCase(deleteResource.fulfilled, (state, action) => {
-        const { projectId, resourceId } = action.payload;
+        const { projectId, project } = action.payload;
 
-        // Update in items array
-        const projectIndex = state.items.findIndex((p) => p._id === projectId);
-        if (projectIndex !== -1) {
-          state.items[projectIndex].resources = state.items[
-            projectIndex
-          ].resources.filter((r) => r._id !== resourceId);
-        }
+        console.log("zvaita")
 
         // Update in currentProject if it's the same project
         if (state.currentProject?._id === projectId) {
-          state.currentProject.resources =
-            state.currentProject.resources.filter((r) => r._id !== resourceId);
+          state.currentProject = project
         }
-
         state.loading = false;
       })
       .addCase(deleteResource.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
+
+    
+      // Remove Team Member
+      builder
+      .addCase(removeTeamMember.fulfilled, (state, action) => {
+        const { projectId, updatedProject } = action.payload;
+        
+        // Update in items array
+        const projectIndex = state.items.findIndex((p) => p._id === projectId);
+        if (projectIndex !== -1) {
+          state.items[projectIndex] = updatedProject;
+        }
+      
+        // Update current project if it's the same project
+        if (state.currentProject?._id === projectId) {
+          state.currentProject = updatedProject;
+        }
+        
+        state.loading = false;
+      }) 
+
+      // add team member 
+      builder
+      .addCase(addTeamMember.fulfilled , (state , action) => {
+        state.loading = false ; 
+        state.currentProject = action.payload.project
+      })
+     
   },
 });
 
-export const addTeamMember = createAsyncThunk(
-  "projects/addTeamMember",
-  async ({ projectId, memberData }, thunkAPI) => {
-    try {
-      const data = await apiFetch(
-        `http://localhost:3000/projects/${projectId}/team`,
-        {
-          method: "POST",
-          body: JSON.stringify(memberData),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      return { projectId, updatedProject: data };
-    } catch (err) {
-      return thunkAPI.rejectWithValue(err.message);
-    }
-  }
-);
-
-export const updateTeamMember = createAsyncThunk(
-  "projects/updateTeamMember",
-  async ({ projectId, memberId, memberData }, thunkAPI) => {
-    try {
-      const data = await apiFetch(
-        `http://localhost:3000/projects/${projectId}/team/${memberId}`,
-        {
-          method: "PUT",
-          body: JSON.stringify(memberData),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      return { projectId, updatedProject: data };
-    } catch (err) {
-      return thunkAPI.rejectWithValue(err.message);
-    }
-  }
-);
-
-export const removeTeamMember = createAsyncThunk(
-  "projects/removeTeamMember",
-  async ({ projectId, memberId }, thunkAPI) => {
-    try {
-      const data = await apiFetch(
-        `http://localhost:3000/projects/${projectId}/team/${memberId}`,
-        {
-          method: "DELETE",
-        }
-      );
-      return { projectId, updatedProject: data };
-    } catch (err) {
-      return thunkAPI.rejectWithValue(err.message);
-    }
-  }
-);
 
 // Selectors
 export const selectProjects = (state) => state.projects.items;

@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import Avatar from './Avatar';
-import { addOrUpdateTask } from '../features/projects/projectSlice';
+import { addOrUpdateTask  , deleteTask} from '../features/projects/projectSlice';
 import { useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectCurrentProject } from '../features/projects/projectSlice';
 
 export default function KanbanBoard({ tasks: initialTasks, users, }) {
   const dispatch = useDispatch();
   const [tasks, setTasks] = useState(initialTasks);
   const [draggedTask, setDraggedTask] = useState(null);
-  const [viewMode, setViewMode] = useState('kanban');
+  const currentProject = useSelector(selectCurrentProject)
+  const [viewMode, setViewMode] = useState('table');
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTask, setNewTask] = useState({
@@ -440,7 +443,8 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                       onClick={() => {
                         const updatedTasks = tasks.filter(t => t._id !== task._id);
                         setTasks(updatedTasks);
-                        onTasksUpdate?.(updatedTasks);
+                        console.log(projectId , task._id , "dtata ----------")
+                        dispatch(deleteTask({projectId: projectId , taskId: task._id}))
                       }}
                       className="text-red-600 hover:text-red-900"
                     >
