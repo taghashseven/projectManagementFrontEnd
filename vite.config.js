@@ -11,4 +11,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: "./src/setupTests.js",
   },
+  server: {
+    allowedHosts: ['project.zchpc.ac.zw' , "localhost" , "all"]
+  }
 });
