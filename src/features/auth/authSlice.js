@@ -1,5 +1,6 @@
 // src/features/auth/authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import url from "../../utils/url"
 
 // Helper function to get user from token
 const getUserFromToken = (token) => {
@@ -20,7 +21,7 @@ export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async ({ email, password }, thunkAPI) => {
     try {
-      const res = await fetch('http://localhost:3000/auth/login', {
+      const res = await fetch(`${url}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -41,7 +42,7 @@ export const registerUser = createAsyncThunk(
   'auth/registerUser',
   async ({ name, email, password }, thunkAPI) => {
     try {
-      const res = await fetch('http://localhost:3000/auth/register', {
+      const res = await fetch(`${url}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
@@ -65,7 +66,7 @@ export const fetchUserProfile = createAsyncThunk(
       const token = thunkAPI.getState().auth.token;
       if (!token) throw new Error('No authentication token found');
 
-      const res = await fetch('http://localhost:3000/auth/me', {
+      const res = await fetch(`${url}auth/me`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

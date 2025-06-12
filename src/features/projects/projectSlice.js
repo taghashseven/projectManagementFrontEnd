@@ -1,13 +1,14 @@
 // features/projects/projectSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import apiFetch from "../../utils/api";
+import url from "../../utils/url"
 
 // Async Thunks
 export const fetchProjects = createAsyncThunk(
   "projects/fetchProjects",
   async (_, thunkAPI) => {
     try {
-      const data = await apiFetch("http://localhost:3000/projects");
+      const data = await apiFetch(`${url}/projects`);
       return data;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.message);
@@ -19,7 +20,7 @@ export const createProject = createAsyncThunk(
   "projects/createProject",
   async (projectData, thunkAPI) => {
     try {
-      const data = await apiFetch("http://localhost:3000/projects", {
+      const data = await apiFetch(`${url}/projects`, {
         method: "POST",
         body: JSON.stringify(projectData),
         headers: {
@@ -38,7 +39,7 @@ export const fetchProject = createAsyncThunk(
   "projects/fetchProject",
   async (projectId, thunkAPI) => {
     try {
-      const data = await apiFetch(`http://localhost:3000/projects/${projectId}`);
+      const data = await apiFetch(`${url}/projects/${projectId}`);
       return data;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.message);
@@ -64,7 +65,7 @@ export const updateProject = createAsyncThunk(
   async ({ projectId, projectData }, thunkAPI) => {
     try {
       const data = await apiFetch(
-        `http://localhost:3000/projects/${projectId}`,
+        `${url}/${projectId}`,
         {
           method: "PUT",
           body: JSON.stringify(projectData),
@@ -84,7 +85,7 @@ export const deleteProject = createAsyncThunk(
   "projects/deleteProject",
   async (projectId, thunkAPI) => {
     try {
-      await apiFetch(`http://localhost:3000/projects/${projectId}`, {
+      await apiFetch(`${url}/projects/${projectId}`, {
         method: "DELETE",
       });
       return projectId;
@@ -102,7 +103,7 @@ export const addOrUpdateTask = createAsyncThunk(
     try {
       console.log(projectId, "add or update Task ");
       const data = await apiFetch(
-        `http://localhost:3000/projects/${projectId}/tasks`,
+        `${url}/projects/${projectId}/tasks`,
         {
           method: "PUT",
           body: JSON.stringify(taskData),
@@ -123,7 +124,7 @@ export const deleteTask = createAsyncThunk(
   async ({ projectId, taskId }, thunkAPI) => {
     try {
       const data = await apiFetch(
-        `http://localhost:3000/projects/${projectId}/tasks/${taskId}`,
+        `${url}/projects/${projectId}/tasks/${taskId}`,
         {
           method: "DELETE",
         }
@@ -141,7 +142,7 @@ export const addResource = createAsyncThunk(
   async ({ projectId, resourceData }, thunkAPI) => {
     try {
       const data = await apiFetch(
-        `http://localhost:3000/projects/${projectId}/resources`,
+        `${url}/projects/${projectId}/resources`,
         {
           method: "POST",
           body: JSON.stringify(resourceData),
@@ -162,7 +163,7 @@ export const deleteResource = createAsyncThunk(
   async ({ projectId, resourceId }, thunkAPI) => {
     try {
       const project = await apiFetch(
-        `http://localhost:3000/projects/${projectId}/resources/${resourceId}`,
+        `${url}/projects/${projectId}/resources/${resourceId}`,
         {
           method: "DELETE",
         }
@@ -179,7 +180,7 @@ export const addTeamMember = createAsyncThunk(
   async ({ projectId, memberData }, thunkAPI) => {
     try {
       const data = await apiFetch(
-        `http://localhost:3000/projects/${projectId}/team`,
+        `${url}/projects/${projectId}/team`,
         {
           method: "POST",
           body: JSON.stringify(memberData),
@@ -221,7 +222,7 @@ export const removeTeamMember = createAsyncThunk(
   async ({ projectId, memberId }, thunkAPI) => {
     try {
       const data = await apiFetch(
-        `http://localhost:3000/projects/${projectId}/team/${memberId}`,
+        `${url}/projects/${projectId}/team/${memberId}`,
         {
           method: "DELETE",
         }
