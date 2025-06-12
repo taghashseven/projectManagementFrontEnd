@@ -52,7 +52,7 @@ export const fetchAllUsers = createAsyncThunk(
   "projects/fetchAllUsers",
   async (_, thunkAPI) => {
     try {
-      const data = await apiFetch("http://localhost:3000/auth/getUsers");
+      const data = await apiFetch(`${url}/auth/getUsers`);
       return data;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.message);
