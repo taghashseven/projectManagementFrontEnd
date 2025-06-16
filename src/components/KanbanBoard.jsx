@@ -267,7 +267,7 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                 onClick={handleAddTask}
                 className="px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
               >
-                Save1
+                Save
               </button>
               <button
                 onClick={() => setIsAddingTask(false)}

@@ -327,124 +327,127 @@ function CardView({ projects, statusColors, darkMode }) {
 }
 
 // Table View Component
+// Table View Component
 function TableView({ projects, statusColors, darkMode }) {
   return (
     <div className={`rounded-lg shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
-            <tr>
-              <th
-                scope="col"
-                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                  darkMode ? 'text-gray-300' : 'text-gray-500'
-                }`}
-              >
-                Project Name
-              </th>
-              <th
-                scope="col"
-                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                  darkMode ? 'text-gray-300' : 'text-gray-500'
-                }`}
-              >
-                Description
-              </th>
-              <th
-                scope="col"
-                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                  darkMode ? 'text-gray-300' : 'text-gray-500'
-                }`}
-              >
-                Status
-              </th>
-              <th
-                scope="col"
-                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                  darkMode ? 'text-gray-300' : 'text-gray-500'
-                }`}
-              >
-                Start Date
-              </th>
-              <th
-                scope="col"
-                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                  darkMode ? 'text-gray-300' : 'text-gray-500'
-                }`}
-              >
-                Team
-              </th>
-              <th
-                scope="col"
-                className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                  darkMode ? 'text-gray-300' : 'text-gray-500'
-                }`}
-              >
-                Resources
-              </th>
-            </tr>
-          </thead>
-          <tbody className={`divide-y ${darkMode ? 'divide-gray-700 bg-gray-800' : 'divide-gray-200 bg-white'}`}>
-            {projects.map((project) => (
-              <tr 
-                key={project._id} 
-                className={darkMode ? 'hover:bg-gray-700 cursor-pointer' : 'hover:bg-gray-50 cursor-pointer'}
-              >
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Link
-                    to={`/projects/${project._id}`}
-                    className={`text-sm font-medium ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
-                  >
-                    {project.name}
-                  </Link>
-                </td>
-                <td className="px-6 py-4">
-                  <p className={`text-sm line-clamp-2 max-w-xs ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                    {project.description}
-                  </p>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      statusColors[project.status]
-                    }`}
-                  >
-                    {project.status.replace("-", " ")}
-                  </span>
-                </td>
-                <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {new Date(project.startDate).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex -space-x-1 overflow-hidden">
-                    {project.team.slice(0, 3).map((member) => (
-                      <div
-                        key={member._id}
-                        className={`inline-block h-6 w-6 rounded-full ring-2 ${
-                          darkMode ? 'ring-gray-800' : 'ring-white'
-                        } bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-medium`}
-                      >
-                        {member.name.charAt(0)}
-                      </div>
-                    ))}
-                    {project.team.length > 3 && (
-                      <div
-                        className={`inline-block h-6 w-6 rounded-full ring-2 ${
-                          darkMode ? 'ring-gray-800' : 'ring-white'
-                        } ${darkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-600'} flex items-center justify-center text-xs font-medium`}
-                      >
-                        +{project.team.length - 3}
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {project?.resources?.length || 0}
-                </td>
+        <div className="inline-block min-w-full align-middle">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
+              <tr>
+                <th
+                  scope="col"
+                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    darkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}
+                >
+                  Project Name
+                </th>
+                <th
+                  scope="col"
+                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    darkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}
+                >
+                  Description
+                </th>
+                <th
+                  scope="col"
+                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    darkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}
+                >
+                  Status
+                </th>
+                <th
+                  scope="col"
+                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    darkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}
+                >
+                  Start Date
+                </th>
+                <th
+                  scope="col"
+                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    darkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}
+                >
+                  Team
+                </th>
+                <th
+                  scope="col"
+                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    darkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}
+                >
+                  Resources
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className={`divide-y ${darkMode ? 'divide-gray-700 bg-gray-800' : 'divide-gray-200 bg-white'}`}>
+              {projects.map((project) => (
+                <tr 
+                  key={project._id} 
+                  className={darkMode ? 'hover:bg-gray-700 cursor-pointer' : 'hover:bg-gray-50 cursor-pointer'}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap max-w-xs truncate">
+                    <Link
+                      to={`/projects/${project._id}`}
+                      className={`text-sm font-medium ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'} truncate`}
+                    >
+                      {project.name}
+                    </Link>
+                  </td>
+                  <td className="px-6 py-4 max-w-xs">
+                    <p className={`text-sm line-clamp-2 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                      {project.description}
+                    </p>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        statusColors[project.status]
+                      }`}
+                    >
+                      {project.status.replace("-", " ")}
+                    </span>
+                  </td>
+                  <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {new Date(project.startDate).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex -space-x-1 overflow-hidden">
+                      {project.team.slice(0, 3).map((member) => (
+                        <div
+                          key={member._id}
+                          className={`inline-block h-6 w-6 rounded-full ring-2 ${
+                            darkMode ? 'ring-gray-800' : 'ring-white'
+                          } bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-medium`}
+                        >
+                          {member.name.charAt(0)}
+                        </div>
+                      ))}
+                      {project.team.length > 3 && (
+                        <div
+                          className={`inline-block h-6 w-6 rounded-full ring-2 ${
+                            darkMode ? 'ring-gray-800' : 'ring-white'
+                          } ${darkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-600'} flex items-center justify-center text-xs font-medium`}
+                        >
+                          +{project.team.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {project?.resources?.length || 0}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
