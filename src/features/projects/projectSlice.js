@@ -64,8 +64,9 @@ export const updateProject = createAsyncThunk(
   "projects/updateProject",
   async ({ projectId, projectData }, thunkAPI) => {
     try {
+      console.log(projectData, "update project" , "project id" , projectId);
       const data = await apiFetch(
-        `${url}/${projectId}`,
+        `${url}/projects/${projectId}`,
         {
           method: "PUT",
           body: JSON.stringify(projectData),
