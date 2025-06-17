@@ -2,6 +2,39 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import url from "../../utils/url"
 
+
+// google login 
+export const googleLogin = createAsyncThunk(
+  'auth/googleLogin',
+  async (googleData, { rejectWithValue }) => {
+    try {
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token: googleData.token,
+          email: googleData.email,
+          name: googleData.name,
+          avatar: googleData.avatar
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // If the response is not 2xx, reject with the error message
+        return rejectWithValue(data);
+      }
+
+      return data;
+    } catch (error) {
+      // Handle network errors or other exceptions
+      return rejectWithValue(error.message || 'Something went wrong');
+    }
+  }
+);
 // Helper function to get user from token
 const getUserFromToken = (token) => {
   if (!token) return null;

@@ -14,6 +14,7 @@ import {
   addOrUpdateTask,
 } from "../features/projects/projectSlice";
 import { selectIsAuthenticated } from "../features/auth/authSlice";
+import { useDarkMode } from "../context/DarkModeContext"; // Import your dark mode context
 
 // Components
 import ProjectDetail from "../components/ProjectDetail";
@@ -26,6 +27,8 @@ import ProjectCalendar from "../components/ProjectCalendar";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorAlert from "../components/ErrorAlert";
 import UserCard from "../components/UserCard";
+import DarkModeButton from "../components/DarkMode"; // Import your DarkModeButton component
+
 // Icons
 import {
   ClipboardIcon,
@@ -40,8 +43,6 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   ChartBarIcon,
-  MoonIcon,
-  SunIcon,
 } from "@heroicons/react/24/outline";
 
 const OverviewIcon = ClipboardIcon;
@@ -57,39 +58,58 @@ const StatItem = ({
   icon,
   trend,
   trendColor = "text-gray-500 dark:text-gray-400",
-}) => (
-  <div className="flex items-center space-x-3 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-gray-700/50">
-    <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full">{icon}</div>
-    <div className="flex-1">
-      <p className="text-sm text-gray-600 dark:text-gray-300">{label}</p>
-      <div className="flex items-center justify-between">
-        <p className="text-lg font-semibold text-gray-900 dark:text-white">
-          {value}
-        </p>
-        {trend && (
-          <span className={`text-xs ${trendColor} flex items-center`}>
-            {trend}
-          </span>
-        )}
+}) => {
+  const { darkMode } = useDarkMode();
+  
+  return (
+    <div className={`flex items-center space-x-3 p-3 rounded-lg shadow-sm ${
+      darkMode ? 'bg-gray-800 shadow-gray-700/50' : 'bg-white'
+    }`}>
+      <div className={`p-2 rounded-full ${
+        darkMode ? 'bg-gray-700' : 'bg-gray-100'
+      }`}>{icon}</div>
+      <div className="flex-1">
+        <p className={`text-sm ${
+          darkMode ? 'text-gray-300' : 'text-gray-600'
+        }`}>{label}</p>
+        <div className="flex items-center justify-between">
+          <p className={`text-lg font-semibold ${
+            darkMode ? 'text-white' : 'text-gray-900'
+          }`}>
+            {value}
+          </p>
+          {trend && (
+            <span className={`text-xs ${trendColor} flex items-center`}>
+              {trend}
+            </span>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
-const ProgressBar = ({ percentage }) => (
-  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-    <div
-      className="bg-blue-600 h-2.5 rounded-full"
-      style={{ width: `${percentage}%` }}
-    ></div>
-  </div>
-);
+const ProgressBar = ({ percentage }) => {
+  const { darkMode } = useDarkMode();
+  
+  return (
+    <div className={`w-full rounded-full h-2.5 ${
+      darkMode ? 'bg-gray-700' : 'bg-gray-200'
+    }`}>
+      <div
+        className="bg-blue-600 h-2.5 rounded-full"
+        style={{ width: `${percentage}%` }}
+      ></div>
+    </div>
+  );
+};
 
 export default function ProjectPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const { darkMode } = useDarkMode(); // Use your dark mode context
 
   const projects = useSelector(selectProjects);
   const project = useSelector(selectCurrentProject);
@@ -99,19 +119,6 @@ export default function ProjectPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
   const [editedProject, setEditedProject] = useState(null);
-  const [darkMode, setDarkMode] = useState(
-    localStorage.getItem("darkMode") === "true" || false
-  );
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("darkMode", "true");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("darkMode", "false");
-    }
-  }, [darkMode]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -204,55 +211,59 @@ export default function ProjectPage() {
       icon: <ResourcesIcon className="w-5 h-5" />,
     },
     { id: "chat", label: "Discussion", icon: <ChatIcon className="w-5 h-5" /> },
-    {
-      id: "calendar",
-      label: "Calendar",
-      icon: <CalendarIcon className="w-5 h-5" />,
-    },
+    // {
+    //   id: "calendar",
+    //   label: "Calendar",
+    //   icon: <CalendarIcon className="w-5 h-5" />,
+    // },
   ];
 
   if (loading) return <LoadingSpinner fullPage />;
   if (error) return <ErrorAlert message={error} fullPage />;
   if (!project)
     return (
-      <div className="p-6 text-gray-500 dark:text-gray-400">
+      <div className={`p-6 ${
+        darkMode ? 'text-gray-400' : 'text-gray-500'
+      }`}>
         Loading project...
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className={`min-h-screen ${
+      darkMode ? 'bg-gray-900' : 'bg-gray-50'
+    }`}>
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm">
+      <div className={`shadow-sm ${
+        darkMode ? 'bg-gray-800' : 'bg-white'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <Link
                 to="/dashboard"
-                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 mr-4"
+                className={`${
+                  darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+                } mr-4`}
                 aria-label="Back to dashboard"
               >
                 <ArrowLeftIcon className="w-5 h-5" />
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h1 className={`text-2xl font-bold ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>
                 {project.name}
               </h1>
             </div>
             <div className="flex space-x-3">
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-                aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {darkMode ? (
-                  <SunIcon className="w-5 h-5" />
-                ) : (
-                  <MoonIcon className="w-5 h-5" />
-                )}
-              </button>
+              <DarkModeButton /> {/* Use your DarkModeButton component */}
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                className={`inline-flex items-center px-4 py-2 border shadow-sm text-sm font-medium rounded-md ${
+                  darkMode 
+                    ? 'border-gray-600 text-gray-200 bg-gray-700 hover:bg-gray-600' 
+                    : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                }`}
               >
                 <PencilIcon className="w-5 h-5" />
                 <span className="ml-2">
@@ -279,8 +290,12 @@ export default function ProjectPage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {isEditing && editedProject ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-xl font-bold mb-6 text-gray-800 dark:text-white">
+          <div className={`rounded-lg shadow-md p-6 mb-6 ${
+            darkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
+            <h2 className={`text-xl font-bold mb-6 ${
+              darkMode ? 'text-white' : 'text-gray-800'
+            }`}>
               Edit Project
             </h2>
             <form
@@ -290,7 +305,9 @@ export default function ProjectPage() {
               }}
             >
               <div className="mb-4">
-                <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                <label className={`block font-medium mb-2 ${
+                  darkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
                   Project Name
                 </label>
                 <input
@@ -299,14 +316,20 @@ export default function ProjectPage() {
                   onChange={(e) =>
                     setEditedProject({ ...editedProject, name: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 ${
+                    darkMode 
+                      ? 'bg-gray-700 text-white border-gray-600' 
+                      : 'border-gray-300'
+                  }`}
                   required
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                  <label className={`block font-medium mb-2 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                     Status
                   </label>
                   <select
@@ -317,7 +340,11 @@ export default function ProjectPage() {
                         status: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 ${
+                      darkMode 
+                        ? 'bg-gray-700 text-white border-gray-600' 
+                        : 'border-gray-300'
+                    }`}
                   >
                     <option value="not-started">Not Started</option>
                     <option value="in-progress">In Progress</option>
@@ -327,7 +354,9 @@ export default function ProjectPage() {
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                  <label className={`block font-medium mb-2 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                     Start Date
                   </label>
                   <input
@@ -339,13 +368,19 @@ export default function ProjectPage() {
                         startDate: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 ${
+                      darkMode 
+                        ? 'bg-gray-700 text-white border-gray-600' 
+                        : 'border-gray-300'
+                    }`}
                   />
                 </div>
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                <label className={`block font-medium mb-2 ${
+                  darkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
                   Description
                 </label>
                 <textarea
@@ -356,7 +391,11 @@ export default function ProjectPage() {
                       description: e.target.value,
                     })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white h-24"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 h-24 ${
+                    darkMode 
+                      ? 'bg-gray-700 text-white border-gray-600' 
+                      : 'border-gray-300'
+                  }`}
                   rows="4"
                 />
               </div>
@@ -365,7 +404,11 @@ export default function ProjectPage() {
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2 px-6 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+                  className={`py-2 px-6 rounded-lg border ${
+                    darkMode 
+                      ? 'bg-gray-700 text-gray-200 border-gray-600 hover:bg-gray-600' 
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
                 >
                   Cancel
                 </button>
@@ -381,7 +424,9 @@ export default function ProjectPage() {
         ) : (
           <>
             {/* Tabs */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6 overflow-hidden">
+            <div className={`rounded-lg shadow-sm mb-6 overflow-hidden ${
+              darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
               <nav className="flex overflow-x-auto">
                 {tabs.map((tab) => (
                   <button
@@ -389,8 +434,16 @@ export default function ProjectPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`px-6 py-4 text-sm font-medium flex items-center whitespace-nowrap ${
                       activeTab === tab.id
-                        ? "border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-gray-700"
-                        : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        ? `border-b-2 border-blue-500 ${
+                            darkMode 
+                              ? 'text-blue-400 bg-gray-700' 
+                              : 'text-blue-600 bg-blue-50'
+                          }`
+                        : `${
+                            darkMode 
+                              ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' 
+                              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                          }`
                     }`}
                   >
                     <span className="mr-2">{tab.icon}</span>
@@ -401,31 +454,43 @@ export default function ProjectPage() {
             </div>
 
             {/* Tab Content */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+            <div className={`rounded-lg shadow-sm overflow-hidden ${
+              darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
               {activeTab === "overview" && (
                 <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2 space-y-6">
                     <div>
-                      <h2 className="text-xl font-semibold mb-4 dark:text-white">
+                      <h2 className={`text-xl font-semibold mb-4 ${
+                        darkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
                         Project Overview
                       </h2>
-                      <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                      <p className={`whitespace-pre-line ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
                         {project.description || "No description provided."}
                       </p>
                     </div>
 
                     {/* Project Progress Section */}
                     <div>
-                      <h3 className="text-lg font-medium mb-3 dark:text-white">
+                      <h3 className={`text-lg font-medium mb-3 ${
+                        darkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
                         Project Progress
                       </h3>
                       <div className="space-y-4">
                         <div>
                           <div className="flex justify-between mb-1">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <span className={`text-sm font-medium ${
+                              darkMode ? 'text-gray-300' : 'text-gray-700'
+                            }`}>
                               Overall Completion
                             </span>
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <span className={`text-sm font-medium ${
+                              darkMode ? 'text-gray-300' : 'text-gray-700'
+                            }`}>
                               {completionPercentage}%
                             </span>
                           </div>
@@ -433,26 +498,38 @@ export default function ProjectPage() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <div className={`p-4 rounded-lg ${
+                            darkMode ? 'bg-gray-700' : 'bg-gray-50'
+                          }`}>
+                            <h4 className={`text-sm font-medium mb-2 ${
+                              darkMode ? 'text-gray-300' : 'text-gray-700'
+                            }`}>
                               Timeline
                             </h4>
                             <div className="space-y-2">
                               <div className="flex justify-between">
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                <span className={`text-xs ${
+                                  darkMode ? 'text-gray-400' : 'text-gray-500'
+                                }`}>
                                   Start Date
                                 </span>
-                                <span className="text-xs font-medium dark:text-gray-200">
+                                <span className={`text-xs font-medium ${
+                                  darkMode ? 'text-gray-200' : 'text-gray-900'
+                                }`}>
                                   {new Date(
                                     project.startDate
                                   ).toLocaleDateString()}
                                 </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                <span className={`text-xs ${
+                                  darkMode ? 'text-gray-400' : 'text-gray-500'
+                                }`}>
                                   End Date
                                 </span>
-                                <span className="text-xs font-medium dark:text-gray-200">
+                                <span className={`text-xs font-medium ${
+                                  darkMode ? 'text-gray-200' : 'text-gray-900'
+                                }`}>
                                   {project.endDate
                                     ? new Date(
                                         project.endDate
@@ -462,7 +539,9 @@ export default function ProjectPage() {
                               </div>
                               {daysRemaining !== null && (
                                 <div className="flex justify-between">
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  <span className={`text-xs ${
+                                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                                  }`}>
                                     Days Remaining
                                   </span>
                                   <span
@@ -483,23 +562,33 @@ export default function ProjectPage() {
                             </div>
                           </div>
 
-                          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <div className={`p-4 rounded-lg ${
+                            darkMode ? 'bg-gray-700' : 'bg-gray-50'
+                          }`}>
+                            <h4 className={`text-sm font-medium mb-2 ${
+                              darkMode ? 'text-gray-300' : 'text-gray-700'
+                            }`}>
                               Task Status
                             </h4>
                             <div className="space-y-2">
                               {project.tasks?.length > 0 ? (
                                 <>
                                   <div className="flex justify-between">
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    <span className={`text-xs ${
+                                      darkMode ? 'text-gray-400' : 'text-gray-500'
+                                    }`}>
                                       Total Tasks
                                     </span>
-                                    <span className="text-xs font-medium dark:text-gray-200">
+                                    <span className={`text-xs font-medium ${
+                                      darkMode ? 'text-gray-200' : 'text-gray-900'
+                                    }`}>
                                       {project.tasks.length}
                                     </span>
                                   </div>
                                   <div className="flex justify-between">
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    <span className={`text-xs ${
+                                      darkMode ? 'text-gray-400' : 'text-gray-500'
+                                    }`}>
                                       Completed
                                     </span>
                                     <span className="text-xs font-medium text-green-600 dark:text-green-400">
@@ -511,7 +600,9 @@ export default function ProjectPage() {
                                     </span>
                                   </div>
                                   <div className="flex justify-between">
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    <span className={`text-xs ${
+                                      darkMode ? 'text-gray-400' : 'text-gray-500'
+                                    }`}>
                                       In Progress
                                     </span>
                                     <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
@@ -524,7 +615,9 @@ export default function ProjectPage() {
                                   </div>
                                 </>
                               ) : (
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                <p className={`text-xs ${
+                                  darkMode ? 'text-gray-400' : 'text-gray-500'
+                                }`}>
                                   No tasks yet
                                 </p>
                               )}

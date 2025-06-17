@@ -25,7 +25,7 @@ export default function ProjectCreateForm({ onSubmit, onCancel }) {
   return (
     <form onSubmit={handleSubmit}>
       <div className="mb-4">
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="name" className="block text-sm font-medium  mb-1">
           Project Name
         </label>
         <input
@@ -41,7 +41,7 @@ export default function ProjectCreateForm({ onSubmit, onCancel }) {
       </div>
 
       <div className="mb-4">
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="description" className="block text-sm font-medium  mb-1">
           Description
         </label>
         <textarea
@@ -57,7 +57,7 @@ export default function ProjectCreateForm({ onSubmit, onCancel }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
-          <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="status" className="block text-sm font-medium  mb-1">
             Status
           </label>
           <select
@@ -75,7 +75,7 @@ export default function ProjectCreateForm({ onSubmit, onCancel }) {
         </div>
 
         <div>
-          <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="startDate" className="block text-sm font-medium  mb-1">
             Start Date
           </label>
           <input

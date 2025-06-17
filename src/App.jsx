@@ -8,6 +8,8 @@ import UserDashboard from "./pages/UserDashboard";
 import PrivateRoute from "./PrivateRoute";
 import SettingsPage from "./pages/SettingsPage";
 import { DarkModeProvider } from "./context/DarkModeContext";
+import Register from "./pages/Register";
+
 function App() {
   return (
     <DarkModeProvider>
@@ -17,6 +19,7 @@ function App() {
           <Routes>
             <Route path="/" element={<LoginPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<Register />} />
 
             {/* Protected Routes */}
             <Route

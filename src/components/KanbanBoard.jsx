@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import Avatar from './Avatar';
-import { addOrUpdateTask  , deleteTask} from '../features/projects/projectSlice';
+import { addOrUpdateTask, deleteTask } from '../features/projects/projectSlice';
 import { useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { selectCurrentProject } from '../features/projects/projectSlice';
+import { useDarkMode } from '../context/DarkModeContext';
 
-export default function KanbanBoard({ tasks: initialTasks, users, }) {
+export default function KanbanBoard({ tasks: initialTasks, users }) {
   const dispatch = useDispatch();
   const [tasks, setTasks] = useState(initialTasks);
   const [draggedTask, setDraggedTask] = useState(null);
-  const currentProject = useSelector(selectCurrentProject)
+  const currentProject = useSelector(selectCurrentProject);
   const [viewMode, setViewMode] = useState('table');
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
@@ -23,21 +24,41 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
     assignedTo: [],
     weight: 5
   });
-  // get the project id from the url
   const { projectId } = useParams();
+  const { darkMode } = useDarkMode();
 
   const columns = [
-    { id: 'todo', title: 'To Do', color: 'bg-gray-100' },
-    { id: 'in-progress', title: 'In Progress', color: 'bg-blue-50' },
-    { id: 'review', title: 'Review', color: 'bg-yellow-50' },
-    { id: 'done', title: 'Done', color: 'bg-green-50' },
+    { 
+      id: 'todo', 
+      title: 'To Do', 
+      color: darkMode ? 'bg-gray-700' : 'bg-gray-100',
+      textColor: darkMode ? 'text-gray-200' : 'text-gray-800'
+    },
+    { 
+      id: 'in-progress', 
+      title: 'In Progress', 
+      color: darkMode ? 'bg-blue-900/20' : 'bg-blue-50',
+      textColor: darkMode ? 'text-blue-200' : 'text-blue-800'
+    },
+    { 
+      id: 'review', 
+      title: 'Review', 
+      color: darkMode ? 'bg-yellow-900/20' : 'bg-yellow-50',
+      textColor: darkMode ? 'text-yellow-200' : 'text-yellow-800'
+    },
+    { 
+      id: 'done', 
+      title: 'Done', 
+      color: darkMode ? 'bg-green-900/20' : 'bg-green-50',
+      textColor: darkMode ? 'text-green-200' : 'text-green-800'
+    },
   ];
 
   const priorityColors = {
-    low: 'bg-gray-100 text-gray-800',
-    medium: 'bg-blue-100 text-blue-800',
-    high: 'bg-orange-100 text-orange-800',
-    critical: 'bg-red-100 text-red-800'
+    low: darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-800',
+    medium: darkMode ? 'bg-blue-900/20 text-blue-200' : 'bg-blue-100 text-blue-800',
+    high: darkMode ? 'bg-orange-900/20 text-orange-200' : 'bg-orange-100 text-orange-800',
+    critical: darkMode ? 'bg-red-900/20 text-red-200' : 'bg-red-100 text-red-800'
   };
 
   const handleDragStart = (task) => {
@@ -46,13 +67,21 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
 
   const handleDrop = (status) => {
     if (draggedTask) {
+      const updatedTask = { ...draggedTask, status };
+      
+      // Update local state immediately for responsive UI
       const updatedTasks = tasks.map((task) =>
-        task._id === draggedTask._id ? { ...task, status } : task
+        task._id === draggedTask._id ? updatedTask : task
       );
       setTasks(updatedTasks);
+      
+      // Dispatch the update to Redux
+      dispatch(addOrUpdateTask({ projectId: projectId, taskData: updatedTask }));
+      
       setDraggedTask(null);
     }
   };
+  
 
   const getUserById = (id) => users?.find(user => user._id === id);
 
@@ -63,8 +92,7 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
   const handleSaveTask = (taskId) => {
     const taskToSave = tasks.find(task => task._id === taskId);
     if (!taskToSave?.title) return;
-    console.log(taskToSave, "task to save");
-    dispatch(addOrUpdateTask( {projectId : projectId, taskData: taskToSave}))
+    dispatch(addOrUpdateTask({ projectId: projectId, taskData: taskToSave }));
     setEditingTaskId(null);
   };
 
@@ -76,7 +104,7 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
     }];
     
     setTasks(updatedTasks);
-    dispatch(addOrUpdateTask( {projectId : projectId, taskData: newTask}))
+    dispatch(addOrUpdateTask({ projectId: projectId, taskData: newTask }));
     setIsAddingTask(false);
     setNewTask({
       title: '',
@@ -124,16 +152,18 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
           onDrop={() => handleDrop(column.id)}
         >
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-medium text-gray-800">
+            <h3 className={`font-medium ${column.textColor}`}>
               {column.title} 
-              <span className="ml-2 text-sm text-gray-500">
+              <span className={`ml-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 ({tasks?.filter(t => t?.status === column.id).length})
               </span>
             </h3>
             {column.id === 'todo' && (
               <button 
                 onClick={() => setIsAddingTask(true)}
-                className="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+                className={`text-sm px-3 py-1 rounded ${
+                  darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
+                } text-white`}
               >
                 Add Task
               </button>
@@ -145,16 +175,24 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
               .map(task => (
                 <div 
                   key={task?._id} 
-                  className="bg-white rounded-lg shadow-sm p-3 border border-gray-200 hover:shadow-md transition-shadow"
+                  className={`rounded-lg shadow-sm p-3 border ${
+                    darkMode 
+                      ? 'bg-gray-800 border-gray-700 hover:shadow-gray-700/50' 
+                      : 'bg-white border-gray-200 hover:shadow-md'
+                  } transition-shadow`}
                   draggable
                   onDragStart={() => handleDragStart(task)}
                   onDoubleClick={() => handleEditTask(task._id)}
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="font-medium">{task.title}</h4>
+                      <h4 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {task.title}
+                      </h4>
                       {task.description && (
-                        <p className="text-sm text-gray-600 mt-1">{task.description}</p>
+                        <p className={`text-sm mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                          {task.description}
+                        </p>
                       )}
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full ${priorityColors[task.priority]}`}>
@@ -165,9 +203,9 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                   {task.dueDate && (
                     <div className="mt-2 flex items-center text-sm">
                       <span className={`inline-block w-2 h-2 rounded-full mr-1 ${
-                        new Date(task.dueDate) < new Date() ? 'bg-red-500' : 'bg-gray-400'
+                        new Date(task.dueDate) < new Date() ? 'bg-red-500' : darkMode ? 'bg-gray-500' : 'bg-gray-400'
                       }`}></span>
-                      <span className="text-gray-600">
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
                         Due: {new Date(task.dueDate).toLocaleDateString()}
                       </span>
                     </div>
@@ -182,13 +220,13 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                             key={userId} 
                             name={user.name} 
                             size="sm" 
-                            className="border-2 border-white"
+                            className={`border-2 ${darkMode ? 'border-gray-800' : 'border-white'}`}
                           />
                         ) : null;
                       })}
                     </div>
                     
-                    <div className="text-xs font-medium text-gray-500">
+                    <div className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       Weight: {task.weight}/10
                     </div>
                   </div>
@@ -203,10 +241,14 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
   const renderTableView = () => (
     <div className="overflow-x-auto p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Tasks</h2>
+        <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+          Tasks
+        </h2>
         <button 
           onClick={() => setIsAddingTask(true)}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          className={`px-4 py-2 rounded ${
+            darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
+          } text-white`}
         >
           Add New Task
         </button>
@@ -214,8 +256,12 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
       
       {/* Add Task Form */}
       {isAddingTask && (
-        <div className="bg-gray-50 p-4 rounded-lg mb-4">
-          <h3 className="font-medium mb-3">Add New Task</h3>
+        <div className={`p-4 rounded-lg mb-4 ${
+          darkMode ? 'bg-gray-800' : 'bg-gray-50'
+        }`}>
+          <h3 className={`font-medium mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            Add New Task
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div className="md:col-span-2">
               <input
@@ -223,7 +269,11 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                 placeholder="Title*"
                 value={newTask.title}
                 onChange={(e) => setNewTask({...newTask, title: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className={`w-full px-3 py-2 border rounded-md ${
+                  darkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'border-gray-300'
+                }`}
                 required
               />
             </div>
@@ -232,7 +282,11 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
               <select
                 value={newTask.status}
                 onChange={(e) => setNewTask({...newTask, status: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className={`w-full px-3 py-2 border rounded-md ${
+                  darkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'border-gray-300'
+                }`}
               >
                 {columns.map(column => (
                   <option key={column.id} value={column.id}>{column.title}</option>
@@ -244,7 +298,11 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
               <select
                 value={newTask.priority}
                 onChange={(e) => setNewTask({...newTask, priority: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className={`w-full px-3 py-2 border rounded-md ${
+                  darkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'border-gray-300'
+                }`}
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -258,20 +316,28 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                 type="date"
                 value={newTask.dueDate}
                 onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className={`w-full px-3 py-2 border rounded-md ${
+                  darkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'border-gray-300'
+                }`}
               />
             </div>
             
             <div className="flex items-center space-x-2">
               <button
                 onClick={handleAddTask}
-                className="px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+                className={`px-3 py-2 rounded-md ${
+                  darkMode ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'
+                } text-white`}
               >
                 Save
               </button>
               <button
                 onClick={() => setIsAddingTask(false)}
-                className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                className={`px-3 py-2 rounded-md ${
+                  darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+                } ${darkMode ? 'text-white' : 'text-gray-700'}`}
               >
                 Cancel
               </button>
@@ -280,23 +346,39 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
         </div>
       )}
       
-      <table className="min-w-full bg-white rounded-lg overflow-hidden">
-        <thead className="bg-gray-50">
+      <table className={`min-w-full rounded-lg overflow-hidden ${
+        darkMode ? 'bg-gray-800' : 'bg-white'
+      }`}>
+        <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+              <span className={darkMode ? 'text-gray-300' : 'text-gray-500'}>Title</span>
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+              <span className={darkMode ? 'text-gray-300' : 'text-gray-500'}>Status</span>
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+              <span className={darkMode ? 'text-gray-300' : 'text-gray-500'}>Priority</span>
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+              <span className={darkMode ? 'text-gray-300' : 'text-gray-500'}>Due Date</span>
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+              <span className={darkMode ? 'text-gray-300' : 'text-gray-500'}>Assigned To</span>
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+              <span className={darkMode ? 'text-gray-300' : 'text-gray-500'}>Weight</span>
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+              <span className={darkMode ? 'text-gray-300' : 'text-gray-500'}>Actions</span>
+            </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
+        <tbody className={darkMode ? 'divide-gray-700' : 'divide-gray-200'}>
           {tasks?.map(task => (
             <tr 
               key={task._id} 
-              className="hover:bg-gray-50"
+              className={darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}
               onDoubleClick={() => handleEditTask(task._id)}
             >
               <td className="px-6 py-4 whitespace-nowrap">
@@ -305,14 +387,22 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                     type="text"
                     value={task.title}
                     onChange={(e) => handleTaskChange(task._id, 'title', e.target.value)}
-                    className="w-full px-2 py-1 border border-gray-300 rounded"
+                    className={`w-full px-2 py-1 border rounded ${
+                      darkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'border-gray-300'
+                    }`}
                     autoFocus
                   />
                 ) : (
-                  <div className="font-medium">{task.title}</div>
+                  <div className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {task.title}
+                  </div>
                 )}
                 {task.description && (
-                  <div className="text-sm text-gray-500 mt-1">{task.description}</div>
+                  <div className={`text-sm mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                    {task.description}
+                  </div>
                 )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
@@ -320,7 +410,11 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                   <select
                     value={task.status}
                     onChange={(e) => handleTaskChange(task._id, 'status', e.target.value)}
-                    className="w-full px-2 py-1 border border-gray-300 rounded"
+                    className={`w-full px-2 py-1 border rounded ${
+                      darkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'border-gray-300'
+                    }`}
                   >
                     {columns.map(column => (
                       <option key={column.id} value={column.id}>{column.title}</option>
@@ -328,8 +422,10 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                   </select>
                 ) : (
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    columns.find(c => c.id === task.status)?.color.replace('bg-', 'bg-').replace('-50', '-100')
-                  }`}>
+                    darkMode 
+                      ? columns.find(c => c.id === task.status)?.color.replace('bg-', 'bg-').replace('-50', '-700')
+                      : columns.find(c => c.id === task.status)?.color.replace('bg-', 'bg-').replace('-50', '-100')
+                  } ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                     {columns.find(c => c.id === task.status)?.title}
                   </span>
                 )}
@@ -339,7 +435,11 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                   <select
                     value={task.priority}
                     onChange={(e) => handleTaskChange(task._id, 'priority', e.target.value)}
-                    className="w-full px-2 py-1 border border-gray-300 rounded"
+                    className={`w-full px-2 py-1 border rounded ${
+                      darkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'border-gray-300'
+                    }`}
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -358,14 +458,18 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                     type="date"
                     value={task.dueDate}
                     onChange={(e) => handleTaskChange(task._id, 'dueDate', e.target.value)}
-                    className="w-full px-2 py-1 border border-gray-300 rounded"
+                    className={`w-full px-2 py-1 border rounded ${
+                      darkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'border-gray-300'
+                    }`}
                   />
                 ) : task.dueDate ? (
                   <div className="flex items-center">
                     <span className={`inline-block w-2 h-2 rounded-full mr-1 ${
-                      new Date(task.dueDate) < new Date() ? 'bg-red-500' : 'bg-gray-400'
+                      new Date(task.dueDate) < new Date() ? 'bg-red-500' : darkMode ? 'bg-gray-500' : 'bg-gray-400'
                     }`}></span>
-                    <span className="text-sm text-gray-600">
+                    <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                       {new Date(task.dueDate).toLocaleDateString()}
                     </span>
                   </div>
@@ -381,9 +485,15 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                           id={`assign-${task._id}-${user._id}`}
                           checked={task.assignedTo.includes(user._id)}
                           onChange={(e) => handleAssignUser(task._id, user._id, !e.target.checked)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          className={`h-4 w-4 rounded ${
+                            darkMode 
+                              ? 'bg-gray-700 border-gray-600 text-blue-500 focus:ring-blue-600' 
+                              : 'border-gray-300 text-blue-600 focus:ring-blue-500'
+                          }`}
                         />
-                        <label htmlFor={`assign-${task._id}-${user._id}`} className="ml-2 block text-sm text-gray-900">
+                        <label htmlFor={`assign-${task._id}-${user._id}`} className={`ml-2 block text-sm ${
+                          darkMode ? 'text-gray-200' : 'text-gray-900'
+                        }`}>
                           {user.name}
                         </label>
                       </div>
@@ -398,7 +508,7 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                           key={userId} 
                           name={user.name} 
                           size="sm" 
-                          className="border-2 border-white"
+                          className={`border-2 ${darkMode ? 'border-gray-800' : 'border-white'}`}
                         />
                       ) : null;
                     })}
@@ -413,10 +523,14 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                     max="10"
                     value={task.weight}
                     onChange={(e) => handleTaskChange(task._id, 'weight', parseInt(e.target.value) || 1)}
-                    className="w-full px-2 py-1 border border-gray-300 rounded"
+                    className={`w-full px-2 py-1 border rounded ${
+                      darkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'border-gray-300'
+                    }`}
                   />
                 ) : (
-                  <span className="text-sm text-gray-500">
+                  <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                     {task.weight}/10
                   </span>
                 )}
@@ -426,31 +540,28 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
                   <>
                     <button 
                       onClick={() => handleSaveTask(task._id)}
-                      className="text-green-600 hover:text-green-900 mr-3"
+                      className={`mr-3 ${darkMode ? 'text-green-400 hover:text-green-300' : 'text-green-600 hover:text-green-900'}`}
                     >
                       Save
                     </button>
                     <button 
                       onClick={() => setEditingTaskId(null)}
-                      className="text-gray-600 hover:text-gray-900"
+                      className={darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-900'}
                     >
                       Cancel
                     </button>
                   </>
                 ) : (
-                  <>
-                    <button 
-                      onClick={() => {
-                        const updatedTasks = tasks.filter(t => t._id !== task._id);
-                        setTasks(updatedTasks);
-                        console.log(projectId , task._id , "dtata ----------")
-                        dispatch(deleteTask({projectId: projectId , taskId: task._id}))
-                      }}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
-                  </>
+                  <button 
+                    onClick={() => {
+                      const updatedTasks = tasks.filter(t => t._id !== task._id);
+                      setTasks(updatedTasks);
+                      dispatch(deleteTask({projectId: projectId, taskId: task._id}))
+                    }}
+                    className={darkMode ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-900'}
+                  >
+                    Delete
+                  </button>
                 )}
               </td>
             </tr>
@@ -463,13 +574,19 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
   return (
     <div>
       <div className="flex justify-end p-4">
-        <div className="inline-flex rounded-md shadow-sm">
+        <div className={`inline-flex rounded-md shadow-sm ${
+          darkMode ? 'bg-gray-700' : 'bg-white'
+        }`}>
           <button
             onClick={() => setViewMode('kanban')}
             className={`px-4 py-2 text-sm font-medium rounded-l-lg ${
               viewMode === 'kanban' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-white text-gray-700 hover:bg-gray-50'
+                ? darkMode 
+                  ? 'bg-blue-700 text-white' 
+                  : 'bg-blue-600 text-white'
+                : darkMode 
+                  ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
           >
             Kanban View
@@ -478,8 +595,12 @@ export default function KanbanBoard({ tasks: initialTasks, users, }) {
             onClick={() => setViewMode('table')}
             className={`px-4 py-2 text-sm font-medium rounded-r-lg ${
               viewMode === 'table' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-white text-gray-700 hover:bg-gray-50'
+                ? darkMode 
+                  ? 'bg-blue-700 text-white' 
+                  : 'bg-blue-600 text-white'
+                : darkMode 
+                  ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
           >
             Table View
