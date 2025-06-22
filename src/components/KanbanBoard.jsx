@@ -10,9 +10,7 @@ import { useDarkMode } from '../context/DarkModeContext';
 export default function KanbanBoard({ tasks: initialTasks, users }) {
   const dispatch = useDispatch();
   const [tasks, setTasks] = useState(initialTasks);
-  const [draggedTask, setDraggedTask] = useState(null);
   const currentProject = useSelector(selectCurrentProject);
-  const [viewMode, setViewMode] = useState('table');
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTask, setNewTask] = useState({
@@ -26,32 +24,13 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
   });
   const { projectId } = useParams();
   const { darkMode } = useDarkMode();
+  const [originalTaskValues, setOriginalTaskValues] = useState({});
 
   const columns = [
-    { 
-      id: 'todo', 
-      title: 'To Do', 
-      color: darkMode ? 'bg-gray-700' : 'bg-gray-100',
-      textColor: darkMode ? 'text-gray-200' : 'text-gray-800'
-    },
-    { 
-      id: 'in-progress', 
-      title: 'In Progress', 
-      color: darkMode ? 'bg-blue-900/20' : 'bg-blue-50',
-      textColor: darkMode ? 'text-blue-200' : 'text-blue-800'
-    },
-    { 
-      id: 'review', 
-      title: 'Review', 
-      color: darkMode ? 'bg-yellow-900/20' : 'bg-yellow-50',
-      textColor: darkMode ? 'text-yellow-200' : 'text-yellow-800'
-    },
-    { 
-      id: 'done', 
-      title: 'Done', 
-      color: darkMode ? 'bg-green-900/20' : 'bg-green-50',
-      textColor: darkMode ? 'text-green-200' : 'text-green-800'
-    },
+    { id: 'todo', title: 'To Do' },
+    { id: 'in-progress', title: 'In Progress' },
+    { id: 'review', title: 'Review' },
+    { id: 'done', title: 'Done' },
   ];
 
   const priorityColors = {
@@ -61,31 +40,14 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
     critical: darkMode ? 'bg-red-900/20 text-red-200' : 'bg-red-100 text-red-800'
   };
 
-  const handleDragStart = (task) => {
-    setDraggedTask(task);
-  };
-
-  const handleDrop = (status) => {
-    if (draggedTask) {
-      const updatedTask = { ...draggedTask, status };
-      
-      // Update local state immediately for responsive UI
-      const updatedTasks = tasks.map((task) =>
-        task._id === draggedTask._id ? updatedTask : task
-      );
-      setTasks(updatedTasks);
-      
-      // Dispatch the update to Redux
-      dispatch(addOrUpdateTask({ projectId: projectId, taskData: updatedTask }));
-      
-      setDraggedTask(null);
-    }
-  };
-  
-
   const getUserById = (id) => users?.find(user => user._id === id);
 
   const handleEditTask = (taskId) => {
+    const taskToEdit = tasks.find(task => task._id === taskId);
+    setOriginalTaskValues({
+      ...taskToEdit,
+      assignedTo: [...taskToEdit.assignedTo] // Create a copy of the array
+    });
     setEditingTaskId(taskId);
   };
 
@@ -94,6 +56,7 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
     if (!taskToSave?.title) return;
     dispatch(addOrUpdateTask({ projectId: projectId, taskData: taskToSave }));
     setEditingTaskId(null);
+    setOriginalTaskValues({});
   };
 
   const handleAddTask = () => {
@@ -142,103 +105,37 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
     setTasks(updatedTasks);
   };
 
-  const renderKanbanView = () => (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
-      {columns.map(column => (
-        <div 
-          key={column.id} 
-          className={`${column.color} rounded-lg p-4 min-h-[500px]`}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={() => handleDrop(column.id)}
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h3 className={`font-medium ${column.textColor}`}>
-              {column.title} 
-              <span className={`ml-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                ({tasks?.filter(t => t?.status === column.id).length})
-              </span>
-            </h3>
-            {column.id === 'todo' && (
-              <button 
-                onClick={() => setIsAddingTask(true)}
-                className={`text-sm px-3 py-1 rounded ${
-                  darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
-                } text-white`}
-              >
-                Add Task
-              </button>
-            )}
-          </div>
-          
-          <div className="space-y-3">
-            {tasks?.filter(task => task?.status === column.id)
-              .map(task => (
-                <div 
-                  key={task?._id} 
-                  className={`rounded-lg shadow-sm p-3 border ${
-                    darkMode 
-                      ? 'bg-gray-800 border-gray-700 hover:shadow-gray-700/50' 
-                      : 'bg-white border-gray-200 hover:shadow-md'
-                  } transition-shadow`}
-                  draggable
-                  onDragStart={() => handleDragStart(task)}
-                  onDoubleClick={() => handleEditTask(task._id)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        {task.title}
-                      </h4>
-                      {task.description && (
-                        <p className={`text-sm mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                          {task.description}
-                        </p>
-                      )}
-                    </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${priorityColors[task.priority]}`}>
-                      {task.priority}
-                    </span>
-                  </div>
+  const handleMarkAsDone = (taskId) => {
+    const updatedTasks = tasks.map(task => {
+      if (task._id === taskId) {
+        return { ...task, status: 'done' };
+      }
+      return task;
+    });
+    setTasks(updatedTasks);
+    const taskToUpdate = updatedTasks.find(task => task._id === taskId);
+    dispatch(addOrUpdateTask({ projectId: projectId, taskData: taskToUpdate }));
+  };
 
-                  {task.dueDate && (
-                    <div className="mt-2 flex items-center text-sm">
-                      <span className={`inline-block w-2 h-2 rounded-full mr-1 ${
-                        new Date(task.dueDate) < new Date() ? 'bg-red-500' : darkMode ? 'bg-gray-500' : 'bg-gray-400'
-                      }`}></span>
-                      <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
-                        Due: {new Date(task.dueDate).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
+  const hasChanges = (taskId) => {
+    if (!editingTaskId || editingTaskId !== taskId) return false;
+    
+    const currentTask = tasks.find(task => task._id === taskId);
+    if (!currentTask || !originalTaskValues) return false;
+    
+    // Check if any field has changed
+    return (
+      currentTask.title !== originalTaskValues.title ||
+      currentTask.description !== originalTaskValues.description ||
+      currentTask.status !== originalTaskValues.status ||
+      currentTask.priority !== originalTaskValues.priority ||
+      currentTask.dueDate !== originalTaskValues.dueDate ||
+      currentTask.weight !== originalTaskValues.weight ||
+      JSON.stringify(currentTask.assignedTo) !== JSON.stringify(originalTaskValues.assignedTo)
+    );
+  };
 
-                  <div className="mt-3 flex justify-between items-center">
-                    <div className="flex -space-x-2">
-                      {task.assignedTo?.map(userId => {
-                        const user = getUserById(userId);
-                        return user ? (
-                          <Avatar 
-                            key={userId} 
-                            name={user.name} 
-                            size="sm" 
-                            className={`border-2 ${darkMode ? 'border-gray-800' : 'border-white'}`}
-                          />
-                        ) : null;
-                      })}
-                    </div>
-                    
-                    <div className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      Weight: {task.weight}/10
-                    </div>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderTableView = () => (
+  return (
     <div className="overflow-x-auto p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -269,6 +166,21 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
                 placeholder="Title*"
                 value={newTask.title}
                 onChange={(e) => setNewTask({...newTask, title: e.target.value})}
+                className={`w-full px-3 py-2 border rounded-md ${
+                  darkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'border-gray-300'
+                }`}
+                required
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <input
+                type="text"
+                placeholder="Description"
+                value={newTask.description}
+                onChange={(e) => setNewTask({...newTask, description: e.target.value})}
                 className={`w-full px-3 py-2 border rounded-md ${
                   darkMode 
                     ? 'bg-gray-700 border-gray-600 text-white' 
@@ -323,6 +235,9 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
                 }`}
               />
             </div>
+
+       
+           
             
             <div className="flex items-center space-x-2">
               <button
@@ -352,6 +267,9 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
         <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+              <span className={darkMode ? 'text-gray-300' : 'text-gray-500'}>Done</span>
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
               <span className={darkMode ? 'text-gray-300' : 'text-gray-500'}>Title</span>
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
@@ -363,9 +281,9 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
               <span className={darkMode ? 'text-gray-300' : 'text-gray-500'}>Due Date</span>
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+            {/* <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
               <span className={darkMode ? 'text-gray-300' : 'text-gray-500'}>Assigned To</span>
-            </th>
+            </th> */}
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
               <span className={darkMode ? 'text-gray-300' : 'text-gray-500'}>Weight</span>
             </th>
@@ -378,9 +296,24 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
           {tasks?.map(task => (
             <tr 
               key={task._id} 
-              className={darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}
+              className={`${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} group`}
               onDoubleClick={() => handleEditTask(task._id)}
             >
+              {/* Done Checkbox */}
+              <td className="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={task.status === 'done'}
+                  onChange={() => handleMarkAsDone(task._id)}
+                  className={`h-4 w-4 rounded ${
+                    darkMode 
+                      ? 'bg-gray-700 border-gray-600 text-blue-500 focus:ring-blue-600' 
+                      : 'border-gray-300 text-blue-600 focus:ring-blue-500'
+                  }`}
+                />
+              </td>
+              
+              {/* Title */}
               <td className="px-6 py-4 whitespace-nowrap">
                 {editingTaskId === task._id ? (
                   <input
@@ -405,6 +338,8 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
                   </div>
                 )}
               </td>
+              
+              {/* Status */}
               <td className="px-6 py-4 whitespace-nowrap">
                 {editingTaskId === task._id ? (
                   <select
@@ -422,14 +357,20 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
                   </select>
                 ) : (
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    darkMode 
-                      ? columns.find(c => c.id === task.status)?.color.replace('bg-', 'bg-').replace('-50', '-700')
-                      : columns.find(c => c.id === task.status)?.color.replace('bg-', 'bg-').replace('-50', '-100')
-                  } ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                    task.status === 'todo' ? 
+                      darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-800' :
+                    task.status === 'in-progress' ? 
+                      darkMode ? 'bg-blue-900/20 text-blue-200' : 'bg-blue-100 text-blue-800' :
+                    task.status === 'review' ? 
+                      darkMode ? 'bg-yellow-900/20 text-yellow-200' : 'bg-yellow-100 text-yellow-800' :
+                      darkMode ? 'bg-green-900/20 text-green-200' : 'bg-green-100 text-green-800'
+                  }`}>
                     {columns.find(c => c.id === task.status)?.title}
                   </span>
                 )}
               </td>
+              
+              {/* Priority */}
               <td className="px-6 py-4 whitespace-nowrap">
                 {editingTaskId === task._id ? (
                   <select
@@ -452,6 +393,8 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
                   </span>
                 )}
               </td>
+              
+              {/* Due Date */}
               <td className="px-6 py-4 whitespace-nowrap">
                 {editingTaskId === task._id ? (
                   <input
@@ -475,7 +418,9 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
                   </div>
                 ) : '-'}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              
+              {/* Assigned To */}
+              {/* <td className="px-6 py-4 whitespace-nowrap">
                 {editingTaskId === task._id ? (
                   <div className="space-y-2">
                     {users?.map(user => (
@@ -514,7 +459,9 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
                     })}
                   </div>
                 )}
-              </td>
+              </td> */}
+              
+              {/* Weight */}
               <td className="px-6 py-4 whitespace-nowrap">
                 {editingTaskId === task._id ? (
                   <input
@@ -535,23 +482,18 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
                   </span>
                 )}
               </td>
+              
+              {/* Actions */}
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                {editingTaskId === task._id ? (
-                  <>
+                <div className="opacity-0 group-hover:opacity-100 flex space-x-2">
+                  {editingTaskId === task._id && hasChanges(task._id) && (
                     <button 
                       onClick={() => handleSaveTask(task._id)}
-                      className={`mr-3 ${darkMode ? 'text-green-400 hover:text-green-300' : 'text-green-600 hover:text-green-900'}`}
+                      className={`${darkMode ? 'text-green-400 hover:text-green-300' : 'text-green-600 hover:text-green-900'}`}
                     >
                       Save
                     </button>
-                    <button 
-                      onClick={() => setEditingTaskId(null)}
-                      className={darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-900'}
-                    >
-                      Cancel
-                    </button>
-                  </>
-                ) : (
+                  )}
                   <button 
                     onClick={() => {
                       const updatedTasks = tasks.filter(t => t._id !== task._id);
@@ -562,53 +504,12 @@ export default function KanbanBoard({ tasks: initialTasks, users }) {
                   >
                     Delete
                   </button>
-                )}
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
-  );
-
-  return (
-    <div>
-      <div className="flex justify-end p-4">
-        <div className={`inline-flex rounded-md shadow-sm ${
-          darkMode ? 'bg-gray-700' : 'bg-white'
-        }`}>
-          <button
-            onClick={() => setViewMode('kanban')}
-            className={`px-4 py-2 text-sm font-medium rounded-l-lg ${
-              viewMode === 'kanban' 
-                ? darkMode 
-                  ? 'bg-blue-700 text-white' 
-                  : 'bg-blue-600 text-white'
-                : darkMode 
-                  ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            Kanban View
-          </button>
-          <button
-            onClick={() => setViewMode('table')}
-            className={`px-4 py-2 text-sm font-medium rounded-r-lg ${
-              viewMode === 'table' 
-                ? darkMode 
-                  ? 'bg-blue-700 text-white' 
-                  : 'bg-blue-600 text-white'
-                : darkMode 
-                  ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            Table View
-          </button>
-        </div>
-      </div>
-      
-      {viewMode === 'kanban' ? renderKanbanView() : renderTableView()}
     </div>
   );
 }

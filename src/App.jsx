@@ -9,6 +9,8 @@ import PrivateRoute from "./PrivateRoute";
 import SettingsPage from "./pages/SettingsPage";
 import { DarkModeProvider } from "./context/DarkModeContext";
 import Register from "./pages/Register";
+import Users from "./pages/Users";
+import EKYC  from "./pages/EKYC";
 
 function App() {
   return (
@@ -27,6 +29,22 @@ function App() {
               element={
                 <PrivateRoute>
                   <Dashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/ekyc"
+              element={
+                <PrivateRoute>
+                  <EKYC />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <PrivateRoute>
+                  <Users />
                 </PrivateRoute>
               }
             />

@@ -84,9 +84,11 @@ export default function RegisterPage() {
         name: formData.username,
         email: formData.email,
         password: formData.password
-      })).then((action) => {
+      }))
+      
+      .then((action) => {
         if (action.type.endsWith('fulfilled')) {
-          navigate('/dashboard');
+          navigate('/login');
         }
       });
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect ,useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -14,7 +14,7 @@ import {
   addOrUpdateTask,
 } from "../features/projects/projectSlice";
 import { selectIsAuthenticated } from "../features/auth/authSlice";
-import { useDarkMode } from "../context/DarkModeContext"; // Import your dark mode context
+import { useDarkMode } from "../context/DarkModeContext";
 
 // Components
 import ProjectDetail from "../components/ProjectDetail";
@@ -27,7 +27,7 @@ import ProjectCalendar from "../components/ProjectCalendar";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorAlert from "../components/ErrorAlert";
 import UserCard from "../components/UserCard";
-import DarkModeButton from "../components/DarkMode"; // Import your DarkModeButton component
+import DarkModeButton from "../components/DarkMode";
 
 // Icons
 import {
@@ -44,6 +44,7 @@ import {
   ExclamationTriangleIcon,
   ChartBarIcon,
 } from "@heroicons/react/24/outline";
+import { set } from "date-fns";
 
 const OverviewIcon = ClipboardIcon;
 const TeamIcon = UsersIcon;
@@ -58,13 +59,16 @@ const StatItem = ({
   icon,
   trend,
   trendColor = "text-gray-500 dark:text-gray-400",
+  to ,
 }) => {
   const { darkMode } = useDarkMode();
   
   return (
     <div className={`flex items-center space-x-3 p-3 rounded-lg shadow-sm ${
       darkMode ? 'bg-gray-800 shadow-gray-700/50' : 'bg-white'
-    }`}>
+    }`}
+     onClick={() => to()}
+    >
       <div className={`p-2 rounded-full ${
         darkMode ? 'bg-gray-700' : 'bg-gray-100'
       }`}>{icon}</div>
@@ -109,7 +113,7 @@ export default function ProjectPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const { darkMode } = useDarkMode(); // Use your dark mode context
+  const { darkMode } = useDarkMode();
 
   const projects = useSelector(selectProjects);
   const project = useSelector(selectCurrentProject);
@@ -137,6 +141,12 @@ export default function ProjectPage() {
       if (foundProject) {
         dispatch(setCurrentProject(foundProject));
         setEditedProject({ ...foundProject });
+        
+        // Check for URL hash to navigate to specific section
+        const hash = window.location.hash.substring(1);
+        if (hash && ['tasks', 'team', 'resources'].includes(hash)) {
+          setActiveTab(hash);
+        }
       } else {
         navigate("/dashboard", { replace: true });
       }
@@ -148,6 +158,31 @@ export default function ProjectPage() {
       dispatch(clearCurrentProject());
     };
   }, [dispatch]);
+
+  // Calculate project completion percentage based on task weights
+    const completionPercentage = useMemo(() => {
+    if (!project?.tasks || project.tasks.length === 0) return 0;
+    
+    const totalWeight = project.tasks.reduce((sum, task) => sum + (task.weight || 1), 0);
+    const completedWeight = project.tasks.reduce((sum, task) => {
+      return task.status === "done" ? sum + (task.weight || 1) : sum;
+    }, 0);
+    
+    return Math.round((completedWeight / totalWeight) * 100);
+  }, [project?.tasks]);
+
+
+  // Calculate days remaining
+  const daysRemaining = project?.endDate
+    ? Math.ceil(
+        (new Date(project.endDate) - new Date()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  // Calculate days active
+  const daysActive = project?.startDate
+    ? Math.floor((new Date() - new Date(project.startDate)) /
+      (1000 * 60 * 60 * 24))
+    : 0;
 
   const handleUpdateProject = async (updatedData) => {
     try {
@@ -174,29 +209,6 @@ export default function ProjectPage() {
     }
   };
 
-  // Calculate project completion percentage
-  const completionPercentage =
-    project?.tasks?.length > 0
-      ? Math.round(
-          (project.tasks.filter((t) => t.status === "completed").length /
-            project.tasks.length) *
-            100
-        )
-      : 0;
-
-  // Calculate days remaining
-  const daysRemaining = project?.endDate
-    ? Math.ceil(
-        (new Date(project.endDate) - new Date()) / (1000 * 60 * 60 * 24)
-      )
-    : null;
-
-  // Calculate days active
-  const daysActive = project?.startDate
-    ? Math.floor(new Date() - new Date(project.startDate)) /
-      (1000 * 60 * 60 * 24)
-    : 0;
-
   const tabs = [
     {
       id: "overview",
@@ -210,12 +222,7 @@ export default function ProjectPage() {
       label: "Resources",
       icon: <ResourcesIcon className="w-5 h-5" />,
     },
-    { id: "chat", label: "Discussion", icon: <ChatIcon className="w-5 h-5" /> },
-    // {
-    //   id: "calendar",
-    //   label: "Calendar",
-    //   icon: <CalendarIcon className="w-5 h-5" />,
-    // },
+    // { id: "chat", label: "Discussion", icon: <ChatIcon className="w-5 h-5" /> },
   ];
 
   if (loading) return <LoadingSpinner fullPage />;
@@ -256,7 +263,7 @@ export default function ProjectPage() {
               </h1>
             </div>
             <div className="flex space-x-3">
-              <DarkModeButton /> {/* Use your DarkModeButton component */}
+              <DarkModeButton />
               <button
                 onClick={() => setIsEditing(!isEditing)}
                 className={`inline-flex items-center px-4 py-2 border shadow-sm text-sm font-medium rounded-md ${
@@ -431,7 +438,11 @@ export default function ProjectPage() {
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      // Update URL hash without page reload
+                      window.history.replaceState(null, null, `#${tab.id}`);
+                    }}
                     className={`px-6 py-4 text-sm font-medium flex items-center whitespace-nowrap ${
                       activeTab === tab.id
                         ? `border-b-2 border-blue-500 ${
@@ -486,7 +497,7 @@ export default function ProjectPage() {
                             <span className={`text-sm font-medium ${
                               darkMode ? 'text-gray-300' : 'text-gray-700'
                             }`}>
-                              Overall Completion
+                              Overall Completion (Weighted)
                             </span>
                             <span className={`text-sm font-medium ${
                               darkMode ? 'text-gray-300' : 'text-gray-700'
@@ -568,7 +579,7 @@ export default function ProjectPage() {
                             <h4 className={`text-sm font-medium mb-2 ${
                               darkMode ? 'text-gray-300' : 'text-gray-700'
                             }`}>
-                              Task Status
+                              Task Status (Weighted)
                             </h4>
                             <div className="space-y-2">
                               {project.tasks?.length > 0 ? (
@@ -589,28 +600,24 @@ export default function ProjectPage() {
                                     <span className={`text-xs ${
                                       darkMode ? 'text-gray-400' : 'text-gray-500'
                                     }`}>
-                                      Completed
+                                      Total Weight
                                     </span>
-                                    <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                                      {
-                                        project.tasks.filter(
-                                          (t) => t.status === "completed"
-                                        ).length
-                                      }
+                                    <span className={`text-xs font-medium ${
+                                      darkMode ? 'text-gray-200' : 'text-gray-900'
+                                    }`}>
+                                      {project.tasks.reduce((sum, task) => sum + (task.weight || 1), 0)}
                                     </span>
                                   </div>
                                   <div className="flex justify-between">
                                     <span className={`text-xs ${
                                       darkMode ? 'text-gray-400' : 'text-gray-500'
                                     }`}>
-                                      In Progress
+                                      Completed Weight
                                     </span>
-                                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                                      {
-                                        project.tasks.filter(
-                                          (t) => t.status === "in-progress"
-                                        ).length
-                                      }
+                                    <span className="text-xs font-medium text-green-600 dark:text-green-400">
+                                      {project.tasks.reduce((sum, task) => {
+                                        return task.status === "done" ? sum + (task.weight || 1) : sum;
+                                      }, 0)}
                                     </span>
                                   </div>
                                 </>
@@ -636,11 +643,16 @@ export default function ProjectPage() {
                         label="Team Members"
                         value={project.team?.length || 0}
                         icon={<UsersIcon className="w-5 h-5" />}
+                        onClick={() => setActiveTab("team")}
                       />
                       <StatItem
                         label="Resources"
                         value={project.resources?.length || 0}
                         icon={<DocumentTextIcon className="w-5 h-5" />}
+                        onClick={() =>{
+                          console.log("Resources clicked");
+                           setActiveTab("resources")
+                        }}
                       />
                       <StatItem
                         label="Open Tasks"
@@ -649,6 +661,7 @@ export default function ProjectPage() {
                             .length || 0
                         }
                         icon={<ClipboardIcon className="w-5 h-5" />}
+                        onClick={() => setActiveTab("tasks")}
                       />
                       <StatItem
                         label="Days Active"
@@ -664,6 +677,7 @@ export default function ProjectPage() {
                         icon={
                           <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />
                         }
+                        onClick={() => setActiveTab("tasks")}
                       />
                       <StatItem
                         label="Completion Rate"
@@ -685,18 +699,27 @@ export default function ProjectPage() {
               )}
 
               {activeTab === "tasks" && (
-                <KanbanBoard projectId={project._id} tasks={project.tasks} />
+                <KanbanBoard 
+                  projectId={project._id} 
+                  tasks={project.tasks || []}
+                  onTaskClick={(taskId) => {
+                    // You can implement a task detail view here
+                    console.log("Task clicked:", taskId);
+                  }}
+                />
               )}
 
               {activeTab === "resources" && (
-                <ResourcesSection initialResources={project.resources || []} />
+                <ResourcesSection 
+                  initialResources={project.resources || []}
+                  onResourceClick={(resourceId) => {
+                    // You can implement a resource detail view here
+                    console.log("Resource clicked:", resourceId);
+                  }}
+                />
               )}
 
               {activeTab === "chat" && <ProjectChat projectId={project._id} />}
-
-              {activeTab === "calendar" && (
-                <ProjectCalendar projectId={project._id} />
-              )}
             </div>
           </>
         )}

@@ -7,8 +7,10 @@ import url from "../../utils/url"
 export const fetchProjects = createAsyncThunk(
   "projects/fetchProjects",
   async (_, thunkAPI) => {
+    console.log("fetch projects");
     try {
       const data = await apiFetch(`${url}/projects`);
+      console.log(data);
       return data;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.message);

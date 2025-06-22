@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import ProjectCreateForm from "../components/ProjectCreateForm";
 import { useSelector, useDispatch } from "react-redux";
 import { useDarkMode } from '../context/DarkModeContext';
 import DarkModeButton from '../components/DarkMode';
-
+import { useNavigate } from "react-router-dom";
 import {
   fetchProjects,
   createProject,
@@ -19,6 +19,8 @@ export default function Dashboard() {
     loading,
     error,
   } = useSelector((state) => state.projects);
+
+  //navigate to login if not authenticated
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -56,6 +58,12 @@ export default function Dashboard() {
     "in-progress": projects.filter((p) => p.status === "in-progress").length,
     "on-hold": projects.filter((p) => p.status === "on-hold").length,
     completed: projects.filter((p) => p.status === "completed").length,
+    // due this week
+    "due this week": projects.filter((p) => {
+      const today = new Date();
+      const dueDate = new Date(p.dueDate);
+      return dueDate >= today && dueDate <= today + 7 * 24 * 60 * 60 * 1000;
+    }).length,
   };
 
   // Enhanced contrast colors
@@ -140,6 +148,7 @@ export default function Dashboard() {
                 "in-progress",
                 "on-hold",
                 "completed",
+                
               ].map((filter) => (
                 <button
                   key={filter}
@@ -336,6 +345,7 @@ function CardView({ projects, statusColors, darkMode }) {
 
 // Table View Component with enhanced contrast
 function TableView({ projects, statusColors, darkMode }) {
+  const navigate = useNavigate();
   return (
     <div className={`rounded-lg shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
       <div className="overflow-x-auto">
@@ -398,6 +408,7 @@ function TableView({ projects, statusColors, darkMode }) {
                 <tr 
                   key={project._id} 
                   className={darkMode ? 'hover:bg-gray-700 cursor-pointer' : 'hover:bg-gray-50 cursor-pointer'}
+                  onClick={() =>  navigate(`/projects/${project._id}`)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap max-w-xs truncate">
                     <Link

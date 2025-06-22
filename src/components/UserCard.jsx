@@ -107,6 +107,16 @@ export default function UserDropdown() {
     >
       Sign out
     </button>
+    <button
+      onClick={() => {
+        console.log("Manage Users");
+        navigate('/users')
+      }}
+      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors border-t border-gray-100"
+      role="menuitem"
+    >
+      Manage Users
+    </button>
   </div>
 )}
 
