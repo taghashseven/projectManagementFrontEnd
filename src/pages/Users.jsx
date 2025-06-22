@@ -74,12 +74,16 @@ export default function UserManagement() {
   const handleSaveEdit = async (userId) => {
     try {
       if (editingField === 'password') {
-        await dispatch(resetUserPassword({
+       const resp = await dispatch(resetUserPassword({
           userId,
           newPassword: editedUser.password
         }));
+        if (resp.error) {
+          console.error('Error resetting password:', resp.error);
+          return;
+        }
       } else {
-        await dispatch(updateUserDetails({
+        const resp = await dispatch(updateUserDetails({
           userId,
           updates: {
             name: editedUser.name,
@@ -87,6 +91,10 @@ export default function UserManagement() {
             role: editedUser.role
           }
         }));
+        if (resp.error) {
+          console.error('Error updating user:', resp.error);
+          return;
+        }
       }
       
       setEditingId(null);
@@ -184,6 +192,7 @@ export default function UserManagement() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
                 <tr>
+                  <th></th>
                   <th scope="col" className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                     Name
                   </th>
@@ -214,6 +223,35 @@ export default function UserManagement() {
                 ) : (
                   filteredUsers.map((user) => (
                     <tr key={user._id} className={darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
+                      {/* bin */}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            // are you sure you want to delete this user?
+                            setShowDeleteModal(true);
+                            // delete user 
+                            window.confirm(`Are you sure you want to delete ${user.name}?`) &&                         dispatch(deleteUser(user._id));
+                          }}
+                          className={`text-red-600 hover:text-red-900 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} focus:outline-none focus:ring-2 focus:ring-red-500 rounded-md p-1`}
+                          >
+                                <svg
+                                  className="h-5 w-5"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 7l-2 14H7L5 7m3-4h8a1 1 0 011 1v1a1 1 0 01-1 1H8a1 1 0 01-1-1V4a1 1 0 011-1zM9 7v12m6-12v12"
+                                        />
+                                  </svg>
+                          </button>
+                            </td>
                       {/* Name Column */}
                       <td 
                         className="px-6 py-4 whitespace-nowrap"
@@ -322,6 +360,7 @@ export default function UserManagement() {
 
                       {/* Actions Column */}
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        
                         {editingId === user._id ? (
                           <div className="flex justify-end space-x-2">
                             <button
@@ -351,23 +390,7 @@ export default function UserManagement() {
                             </button>
                           </div>
                         ) : (
-                          <div className="flex justify-end space-x-2">
-                            {currentUser?.role === 'admin' && currentUser?._id !== user._id && (
-                              <button
-                                onClick={() => {
-                                  setSelectedUser(user);
-                                  setShowDeleteModal(true);
-                                }}
-                                className={`px-3 py-1 rounded-md text-sm ${
-                                  darkMode 
-                                    ? 'text-red-400 hover:text-red-300 hover:bg-gray-700' 
-                                    : 'text-red-600 hover:text-red-800 hover:bg-gray-100'
-                                }`}
-                              >
-                                Delete
-                              </button>
-                            )}
-                          </div>
+                          ""
                         )}
                       </td>
                     </tr>

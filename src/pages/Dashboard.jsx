@@ -11,6 +11,7 @@ import {
   fetchAllUsers,
 } from "../features/projects/projectSlice";
 import User from "../components/UserCard";
+import Spinner from "../components/Spinner";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
@@ -20,18 +21,25 @@ export default function Dashboard() {
     error,
   } = useSelector((state) => state.projects);
 
-  //navigate to login if not authenticated
-
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState("table"); // 'cards' or 'table'
-
-  // Check for user's preferred color scheme
-  const {darkMode} = useDarkMode();
+  const [viewMode, setViewMode] = useState(() => {
+    // Default to card view on mobile, table view on larger screens
+    return window.innerWidth < 768 ? "cards" : "table";
+  });
+  const { darkMode } = useDarkMode();
 
   useEffect(() => {
     dispatch(fetchProjects());
+    
+    // Handle view mode based on screen size
+    const handleResize = () => {
+      setViewMode(window.innerWidth < 768 ? "cards" : "table");
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [dispatch]);
 
   const onCreateProject = async (projectData) => {
@@ -58,15 +66,8 @@ export default function Dashboard() {
     "in-progress": projects.filter((p) => p.status === "in-progress").length,
     "on-hold": projects.filter((p) => p.status === "on-hold").length,
     completed: projects.filter((p) => p.status === "completed").length,
-    // due this week
-    "due this week": projects.filter((p) => {
-      const today = new Date();
-      const dueDate = new Date(p.dueDate);
-      return dueDate >= today && dueDate <= today + 7 * 24 * 60 * 60 * 1000;
-    }).length,
   };
 
-  // Enhanced contrast colors
   const statusColors = {
     "not-started": darkMode ? "bg-gray-700 text-gray-100" : "bg-gray-200 text-gray-900",
     "in-progress": darkMode ? "bg-yellow-700 text-yellow-50" : "bg-yellow-200 text-yellow-900",
@@ -74,112 +75,131 @@ export default function Dashboard() {
     completed: darkMode ? "bg-green-700 text-green-50" : "bg-green-200 text-green-900",
   };
 
+  if (loading) return <Spinner />;
+
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} p-6 transition-colors duration-200 relative`}>
-      {/* Dark mode toggle button */}
+    <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} p-4 sm:p-6 transition-colors duration-200 relative`}>
       <DarkModeButton />
 
-      {/* Blur overlay when modal is open */}
       {showCreateForm && (
         <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-40"></div>
       )}
 
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <div>
-            <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+        {/* Header - Stacked on mobile, row on larger screens */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 sm:mb-8 gap-4">
+          <div className="order-1 md:order-none">
+            <h1 className={`text-2xl sm:text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
               Project Dashboard
             </h1>
-            <p className={`mt-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            <p className={`mt-1 sm:mt-2 text-sm sm:text-base ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               Manage all your projects in one place
             </p>
           </div>
-          <div className="mt-4 md:mt-0 flex items-center space-x-4">
-            <div className={`flex rounded-lg shadow-sm p-1 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 order-2 md:order-none">
+            {/* View toggle - hidden on mobile */}
+            <div className={`hidden sm:flex rounded-lg shadow-sm p-1 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <button
                 onClick={() => setViewMode("cards")}
                 className={`px-3 py-1 text-sm font-medium rounded-md ${
                   viewMode === "cards"
-                    ? darkMode 
-                      ? 'bg-blue-700 text-blue-50' 
-                      : 'bg-blue-200 text-blue-900'
-                    : darkMode
-                      ? 'text-gray-300 hover:bg-gray-700'
-                      : 'text-gray-600 hover:bg-gray-100'
+                    ? darkMode ? 'bg-blue-700 text-blue-50' : 'bg-blue-200 text-blue-900'
+                    : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                Card View
+                Cards
               </button>
               <button
                 onClick={() => setViewMode("table")}
                 className={`px-3 py-1 text-sm font-medium rounded-md ${
                   viewMode === "table"
-                    ? darkMode 
-                      ? 'bg-blue-700 text-blue-50' 
-                      : 'bg-blue-200 text-blue-900'
-                    : darkMode
-                      ? 'text-gray-300 hover:bg-gray-700'
-                      : 'text-gray-600 hover:bg-gray-100'
+                    ? darkMode ? 'bg-blue-700 text-blue-50' : 'bg-blue-200 text-blue-900'
+                    : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                Table View
+                Table
               </button>
             </div>
+            
             <button
               onClick={() => setShowCreateForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200 shadow-md"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 sm:px-6 rounded-lg transition duration-200 shadow-md text-sm sm:text-base"
             >
-              Create New Project
+              New Project
             </button>
-            <User darkMode={darkMode} />
+            
+            <div className="hidden sm:block">
+              <User darkMode={darkMode} />
+            </div>
           </div>
         </div>
 
-        {/* Filters and Search */}
-        <div className={`rounded-lg shadow-sm p-4 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'} border ${
+        {/* Mobile User and View Toggle - only shown on small screens */}
+        <div className="flex justify-between items-center mb-4 sm:hidden">
+          <div className="flex items-center gap-2">
+            <User darkMode={darkMode} compact />
+            <div className={`flex rounded-lg shadow-sm p-1 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <button
+                onClick={() => setViewMode("cards")}
+                className={`px-2 py-1 text-xs font-medium rounded-md ${
+                  viewMode === "cards"
+                    ? darkMode ? 'bg-blue-700 text-blue-50' : 'bg-blue-200 text-blue-900'
+                    : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Cards
+              </button>
+              <button
+                onClick={() => setViewMode("table")}
+                className={`px-2 py-1 text-xs font-medium rounded-md ${
+                  viewMode === "table"
+                    ? darkMode ? 'bg-blue-700 text-blue-50' : 'bg-blue-200 text-blue-900'
+                    : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Table
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters and Search - stacked on mobile, row on larger screens */}
+        <div className={`rounded-lg shadow-sm p-3 sm:p-4 mb-4 sm:mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'} border ${
           darkMode ? 'border-gray-700' : 'border-gray-200'
         }`}>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex space-x-1 overflow-x-auto pb-2 md:pb-0">
-              {[
-                "all",
-                "not-started",
-                "in-progress",
-                "on-hold",
-                "completed",
-                
-              ].map((filter) => (
+          <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* Filters - scrollable on mobile */}
+            <div className="flex space-x-1 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
+              {["all", "not-started", "in-progress", "on-hold", "completed"].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setActiveFilter(filter)}
-                  className={`px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap ${
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-md whitespace-nowrap ${
                     activeFilter === filter
-                      ? darkMode 
-                        ? 'bg-blue-700 text-blue-50' 
-                        : 'bg-blue-200 text-blue-900'
-                      : darkMode
-                        ? 'text-gray-300 hover:bg-gray-700'
-                        : 'text-gray-600 hover:bg-gray-100'
+                      ? darkMode ? 'bg-blue-700 text-blue-50' : 'bg-blue-200 text-blue-900'
+                      : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{projectCounts[filter]}</p>
-                    {filter === "all" ? "All Projects" : filter.replace("-", " ")}
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{projectCounts[filter]}</span>
+                    <span>{filter === "all" ? "All" : filter.split("-")[0]}</span>
                   </div>
                 </button>
               ))}
             </div>
-            <div className="relative w-full md:w-64">
+            
+            {/* Search - full width on mobile, fixed width on larger screens */}
+            <div className="relative w-full sm:w-64">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon className={`h-5 w-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                <SearchIcon className={`h-4 w-4 sm:h-5 sm:w-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
               </div>
               <input
                 type="text"
                 placeholder="Search projects..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                className={`block w-full pl-9 sm:pl-10 pr-3 py-2 text-sm sm:text-base border rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
                 }`}
               />
@@ -189,30 +209,30 @@ export default function Dashboard() {
 
         {/* Projects Display */}
         {filteredProjects.length === 0 ? (
-          <div className={`rounded-lg shadow-sm p-8 text-center ${darkMode ? 'bg-gray-800' : 'bg-white'} border ${
+          <div className={`rounded-lg shadow-sm p-6 text-center ${darkMode ? 'bg-gray-800' : 'bg-white'} border ${
             darkMode ? 'border-gray-700' : 'border-gray-200'
           }`}>
-            <div className={`mx-auto h-12 w-12 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            <div className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
               <FolderIcon />
             </div>
-            <h3 className={`mt-2 text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            <h3 className={`mt-2 text-sm sm:text-base font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
               No projects found
             </h3>
-            <p className={`mt-1 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <p className={`mt-1 text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               {searchQuery
-                ? "Try adjusting your search or filter to find what you're looking for."
-                : "Get started by creating a new project."}
+                ? "Try adjusting your search or filter"
+                : "Get started by creating a new project"}
             </p>
-            <div className="mt-6">
+            <div className="mt-4 sm:mt-6">
               <button
                 onClick={() => {
                   setSearchQuery("");
                   setActiveFilter("all");
                   setShowCreateForm(true);
                 }}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 border border-transparent shadow-sm text-xs sm:text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
               >
-                <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                <PlusIcon className="-ml-1 mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                 New Project
               </button>
             </div>
@@ -223,21 +243,21 @@ export default function Dashboard() {
           <TableView projects={filteredProjects} statusColors={statusColors} darkMode={darkMode} />
         )}
 
-        {/* Create Project Modal */}
+        {/* Create Project Modal - responsive sizing */}
         {showCreateForm && (
           <div
-            className="fixed inset-0 flex items-center justify-center p-4 z-50 bg-black/30 backdrop-blur-sm"
+            className="fixed inset-0 flex items-center justify-center p-2 sm:p-4 z-50 bg-black/30 backdrop-blur-sm"
             onClick={() => setShowCreateForm(false)}
           >
             <div
-              className={`rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto ${
+              className={`rounded-lg shadow-xl w-full max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto ${
                 darkMode ? 'bg-gray-800 border border-gray-700 text-white' : 'bg-white border border-gray-200'
               }`}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              <div className="p-4 sm:p-6">
+                <div className="flex justify-between items-center mb-3 sm:mb-4">
+                  <h2 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                     Create New Project
                   </h2>
                   <button
@@ -245,7 +265,7 @@ export default function Dashboard() {
                     className={`rounded-full p-1 ${darkMode ? 'text-gray-400 hover:bg-gray-700 hover:text-gray-300' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-600'}`}
                     aria-label="Close modal"
                   >
-                    <XMarkIcon className="h-6 w-6" />
+                    <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                   </button>
                 </div>
                 <ProjectCreateForm
@@ -265,7 +285,7 @@ export default function Dashboard() {
   );
 }
 
-// Card View Component with enhanced contrast
+// Responsive Card View Component
 function CardView({ projects, statusColors, darkMode }) {
   return (
     <div className={`rounded-lg shadow-sm overflow-hidden ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
@@ -276,21 +296,21 @@ function CardView({ projects, statusColors, darkMode }) {
             to={`/projects/${project._id}`}
             className={`block transition duration-150 ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
           >
-            <div className="px-4 py-4 sm:px-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
+            <div className="p-3 sm:p-4 sm:px-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="flex items-center gap-2">
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       statusColors[project.status]
                     }`}
                   >
-                    {project.status.replace("-", " ")}
+                    {project.status.split("-")[0]}
                   </span>
-                  <p className={`ml-2 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Started on {new Date(project.startDate).toLocaleDateString()}
+                  <p className={`text-xs sm:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {new Date(project.startDate).toLocaleDateString()}
                   </p>
                 </div>
-                <div className="ml-2 flex-shrink-0 flex">
+                <div className="flex-shrink-0 flex">
                   <div className="flex -space-x-1 overflow-hidden">
                     {project.team.slice(0, 3).map((member) => (
                       <div
@@ -315,24 +335,21 @@ function CardView({ projects, statusColors, darkMode }) {
                 </div>
               </div>
               <div className="mt-2">
-                <h3 className={`text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                <h3 className={`text-base sm:text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                   {project.name}
                 </h3>
-                <p className={`mt-1 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'} line-clamp-2`}>
+                <p className={`mt-1 text-xs sm:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'} line-clamp-2`}>
                   {project.description}
                 </p>
               </div>
               <div className="mt-3 flex justify-between items-center">
-                <div className={`flex items-center text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  <DocumentTextIcon className={`flex-shrink-0 mr-1.5 h-5 w-5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-                  <p>
-                    {project?.resources?.length}{" "}
-                    {project?.resources?.length === 1 ? "resource" : "resources"}
-                  </p>
+                <div className={`flex items-center text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <DocumentTextIcon className={`flex-shrink-0 mr-1 h-4 w-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                  <span>{project?.resources?.length} resources</span>
                 </div>
-                <div className={`flex items-center text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  <ChatBubbleLeftIcon className={`flex-shrink-0 mr-1.5 h-5 w-5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-                  <p>View discussion</p>
+                <div className={`flex items-center text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <ChatBubbleLeftIcon className={`flex-shrink-0 mr-1 h-4 w-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                  <span>Discussion</span>
                 </div>
               </div>
             </div>
@@ -343,7 +360,7 @@ function CardView({ projects, statusColors, darkMode }) {
   );
 }
 
-// Table View Component with enhanced contrast
+// Responsive Table View Component
 function TableView({ projects, statusColors, darkMode }) {
   const navigate = useNavigate();
   return (
@@ -353,53 +370,25 @@ function TableView({ projects, statusColors, darkMode }) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
               <tr>
-                <th
-                  scope="col"
-                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                    darkMode ? 'text-gray-300' : 'text-gray-600'
-                  }`}
-                >
-                  Project Name
+                <th scope="col" className={`px-3 py-2 sm:px-6 sm:py-3 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                  Project
                 </th>
-                <th
-                  scope="col"
-                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                    darkMode ? 'text-gray-300' : 'text-gray-600'
-                  }`}
-                >
+                <th scope="col" className={`hidden sm:table-cell px-6 py-3 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>
                   Description
                 </th>
-                <th
-                  scope="col"
-                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                    darkMode ? 'text-gray-300' : 'text-gray-600'
-                  }`}
-                >
+                <th scope="col" className={`px-3 py-2 sm:px-6 sm:py-3 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>
                   Status
                 </th>
-                <th
-                  scope="col"
-                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                    darkMode ? 'text-gray-300' : 'text-gray-600'
-                  }`}
-                >
-                  Start Date
-                </th>
-                <th
-                  scope="col"
-                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                    darkMode ? 'text-gray-300' : 'text-gray-600'
-                  }`}
-                >
+                <th scope="col" className={`hidden md:table-cell px-6 py-3 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>
                   Team
-                </th>
-                <th
-                  scope="col"
-                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                    darkMode ? 'text-gray-300' : 'text-gray-600'
-                  }`}
-                >
-                  Resources
                 </th>
               </tr>
             </thead>
@@ -408,34 +397,33 @@ function TableView({ projects, statusColors, darkMode }) {
                 <tr 
                   key={project._id} 
                   className={darkMode ? 'hover:bg-gray-700 cursor-pointer' : 'hover:bg-gray-50 cursor-pointer'}
-                  onClick={() =>  navigate(`/projects/${project._id}`)}
+                  onClick={() => navigate(`/projects/${project._id}`)}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap max-w-xs truncate">
-                    <Link
-                      to={`/projects/${project._id}`}
-                      className={`text-sm font-medium ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'} truncate`}
-                    >
-                      {project.name}
-                    </Link>
+                  <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap max-w-[150px] sm:max-w-xs truncate">
+                    <div className="flex flex-col">
+                      <span className={`text-sm sm:text-base font-medium ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'} truncate`}>
+                        {project.name}
+                      </span>
+                      <span className={`text-xs sm:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'} sm:hidden line-clamp-1`}>
+                        {project.description}
+                      </span>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 max-w-xs">
+                  <td className="hidden sm:table-cell px-6 py-4 max-w-xs">
                     <p className={`text-sm line-clamp-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                       {project.description}
                     </p>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
                     <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      className={`px-2 py-1 inline-flex text-xs leading-4 sm:text-sm sm:leading-5 font-semibold rounded-full ${
                         statusColors[project.status]
                       }`}
                     >
-                      {project.status.replace("-", " ")}
+                      {project.status.split("-")[0]}
                     </span>
                   </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    {new Date(project.startDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
                     <div className="flex -space-x-1 overflow-hidden">
                       {project.team.slice(0, 3).map((member) => (
                         <div
@@ -458,9 +446,6 @@ function TableView({ projects, statusColors, darkMode }) {
                       )}
                     </div>
                   </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    {project?.resources?.length || 0}
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -471,6 +456,8 @@ function TableView({ projects, statusColors, darkMode }) {
   );
 }
 
+// Icon components (keep your existing ones)
+// ... [Keep all your existing icon components]
 // Icon components remain the same
 // ...
 // Keep all your existing icon components as they were

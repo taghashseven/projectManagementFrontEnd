@@ -37,11 +37,14 @@ export const googleLogin = createAsyncThunk(
 
 // Helper function to get user from token
 const getUserFromToken = (token) => {
+  console.log("Token:", token);
   if (!token) return null;
+  console.log("Decoding token...");
   try {
     const base64Url = token.split(".")[1];
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
     const payload = JSON.parse(atob(base64));
+    console.log("Decoded payload:", payload);
     return payload.user || null;
   } catch (error) {
     console.error("Error decoding token:", error);
@@ -64,7 +67,10 @@ export const loginUser = createAsyncThunk(
       if (!res.ok) throw new Error(data.message || "Login failed");
 
       localStorage.setItem("token", data.token);
-      return { ...data, user: getUserFromToken(data.token) };
+      localStorage.setItem("user", JSON.stringify(data.user));
+      console.log("Login successful:", data);
+      
+      return { ...data };
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message);
     }
@@ -149,7 +155,7 @@ export const updateUserDetails = createAsyncThunk(
   async ({ userId, updates }, { rejectWithValue }) => {
     try {
       const res = await fetch(`${url}/auth/users/${userId}`, {
-        method: "PATCH",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -241,7 +247,7 @@ export const resetUserPassword = createAsyncThunk(
 );
 
 const initialState = {
-  user: getUserFromToken(localStorage.getItem("token")),
+  user: JSON.parse(localStorage.getItem("user")) || null,
   token: localStorage.getItem("token") || null,
   isAuthenticated: !!localStorage.getItem("token"),
   allUsers: [], // Add this line
